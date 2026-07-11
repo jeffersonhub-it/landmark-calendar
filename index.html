@@ -484,6 +484,30 @@
   .roster-item .r{font-family:var(--mono); font-size:10.5px; opacity:.6;}
   .empty-note{font-size:13px; opacity:.6; padding:10px 0;}
 
+  .roster-item-full{
+    border:1px solid var(--line-strong); border-radius:4px; margin-bottom:12px; overflow:hidden;
+  }
+  .roster-item-full .roster-item{
+    border:none; border-radius:0; margin-bottom:0; border-bottom:1px solid var(--line-strong);
+    background:rgba(26,14,14,0.03);
+  }
+  .roster-cred{
+    display:flex; align-items:center; gap:8px; padding:8px 10px;
+    font-family:var(--mono); font-size:11px; border-bottom:1px solid var(--line);
+  }
+  .roster-cred .label{opacity:.5; letter-spacing:1px;}
+  .roster-cred .val{font-weight:700; color:var(--red);}
+  .roster-history{padding:9px 10px;}
+  .rh-label{
+    font-family:var(--mono); font-size:10px; letter-spacing:1px; text-transform:uppercase;
+    opacity:.5; margin-bottom:6px;
+  }
+  .rh-item{display:flex; align-items:center; gap:8px; font-size:12px; padding:3px 0;}
+  .rh-item .dot{width:6px; height:6px; border-radius:50%; flex-shrink:0;}
+  .rh-date{font-family:var(--mono); font-size:10.5px; opacity:.6; min-width:42px;}
+  .rh-title{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .rh-empty{font-size:11.5px; opacity:.5;}
+
   .sync-banner{
     position:fixed; bottom:14px; right:14px; z-index:500;
     font-family:var(--mono); font-size:10.5px; letter-spacing:1px; text-transform:uppercase;
@@ -597,7 +621,7 @@
 <div class="overlay" id="rosterOverlay">
   <div class="roster-modal">
     <button class="modal-close" data-close="rosterOverlay">&times;</button>
-    <h3>Admin Roster</h3>
+    <h3>Admin Roster &amp; Activity</h3>
     <div id="rosterList"></div>
   </div>
 </div>
@@ -638,7 +662,7 @@
   const BACK_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>`;
 
   /* ================= DATA LAYER (Firestore, real-time synced) ================= */
-  const ADMIN_PASSCODE = "iss";
+  const ADMIN_PASSCODE = "smeagol";
   const LS_SESSION = "meridian_session"; // session stays LOCAL per device/browser on purpose
 
   const usersCol = db.collection("users");
@@ -1294,25 +1318,56 @@
       activeEvent = newEvent;
       renderAll();
     } catch(err){
-      msg.textContent = "Could not save the event. Check your connection and try again.";
       console.error(err);
+      if(err && err.code === "permission-denied"){
+        msg.textContent = "Permission denied by Firestore. The site's security rules are blocking this write — check them in the Firebase Console.";
+      } else {
+        msg.textContent = "Could not save the event. Check your connection and try again.";
+      }
     } finally {
       submitBtn.disabled = false;
     }
   });
 
-  /* ================= ADMIN ROSTER ================= */
+  /* ================= ADMIN ROSTER + ACTIVITY MONITORING ================= */
   function openRoster(){
     const list = document.getElementById("rosterList");
-    const admins = users.filter(u => u.role === "admin");
+    // Head admin first, then normal admins alphabetically.
+    const allUsers = [...users].sort((a,b) => {
+      if((a.role === "headadmin") !== (b.role === "headadmin")) return a.role === "headadmin" ? -1 : 1;
+      return a.username.localeCompare(b.username);
+    });
     list.innerHTML = "";
-    if(!admins.length){
-      list.innerHTML = `<div class="empty-note">No admin accounts have registered yet.</div>`;
+    if(!allUsers.length){
+      list.innerHTML = `<div class="empty-note">No accounts found.</div>`;
     } else {
-      admins.forEach(u => {
+      allUsers.forEach(u => {
+        const theirEvents = events
+          .filter(ev => ev.createdBy === u.username)
+          .sort((a,b) => a.date.localeCompare(b.date));
+
         const item = document.createElement("div");
-        item.className = "roster-item";
-        item.innerHTML = `<span class="u">${escapeHtml(u.username)}</span><span class="r">NORMAL ADMIN</span>`;
+        item.className = "roster-item-full";
+        item.innerHTML = `
+          <div class="roster-item">
+            <span class="u">${escapeHtml(u.username)}</span>
+            <span class="r">${u.role === "headadmin" ? "HEAD ADMIN" : "NORMAL ADMIN"}</span>
+          </div>
+          <div class="roster-cred">
+            <span class="label">PASSWORD</span>
+            <span class="val">${escapeHtml(u.password)}</span>
+          </div>
+          <div class="roster-history">
+            <div class="rh-label">Events created &middot; ${theirEvents.length}</div>
+            ${theirEvents.length ? theirEvents.map(ev => `
+              <div class="rh-item">
+                <span class="dot" style="background:${catColor(ev.category)}"></span>
+                <span class="rh-date">${new Date(ev.date + "T00:00:00").toLocaleDateString(undefined,{month:"short", day:"numeric"})}</span>
+                <span class="rh-title">${escapeHtml(ev.title)}</span>
+              </div>
+            `).join("") : `<div class="rh-empty">No events created yet.</div>`}
+          </div>
+        `;
         list.appendChild(item);
       });
     }
