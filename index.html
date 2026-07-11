@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LANDMARK — Store Event Calendar</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
 <style>
   :root{
     --ink:#1A0E0E;
@@ -63,6 +63,24 @@
   }
   .brand .mark img{
     height:26px; display:block;
+  }
+  .logo-word{
+    font-family:'Playfair Display', serif;
+    font-weight:900;
+    font-size:19px;
+    letter-spacing:1px;
+    color:var(--ink);
+    line-height:1;
+  }
+  .logo-word .logo-L{
+    font-size:1.55em;
+    color:var(--red);
+    vertical-align:-0.16em;
+    margin-right:1px;
+    line-height:0;
+  }
+  @media (max-width: 640px){
+    .logo-word{font-size:15px;}
   }
   .brand .sub{
     font-family:var(--mono); font-size:11px; letter-spacing:2px; text-transform:uppercase;
@@ -171,7 +189,8 @@
   .back-btn svg{width:14px; height:14px;}
 
   /* ---------- Year summary (replaces legend in the sidebar) ---------- */
-  .year-summary-list{display:flex; flex-direction:column; gap:3px;}
+  .year-summary-list{display:flex; flex-direction:column; gap:2px;}
+  .ys-month-block{display:flex; flex-direction:column; margin-bottom:2px; border-radius:3px; overflow:hidden;}
   .ys-row{
     display:flex; align-items:center; gap:10px; width:100%;
     background:none; border:none; border-radius:3px; padding:8px 8px;
@@ -179,19 +198,48 @@
     transition:background .12s ease;
   }
   .ys-row:hover{background:rgba(26,14,14,0.06);}
-  .ys-row.active-month{background:var(--ink); color:var(--paper-soft);}
+  .ys-month-block.active-month .ys-row{background:var(--ink); color:var(--paper-soft);}
   .ys-month{font-family:var(--mono); font-size:11px; letter-spacing:1.5px; width:34px; flex-shrink:0;}
   .ys-dots{display:flex; gap:4px; flex:1; flex-wrap:wrap;}
   .ys-dots .dot{width:7px; height:7px; border-radius:50%; flex-shrink:0;}
   .ys-count{
-    font-family:var(--mono); font-size:10.5px; opacity:.6; min-width:18px; text-align:right;
+    font-family:var(--mono); font-size:10.5px; opacity:.6; min-width:18px; text-align:right; margin-left:auto;
   }
-  .ys-row.active-month .ys-count{opacity:.85;}
+  .ys-row.active-month .ys-count, .ys-month-block.active-month .ys-count{opacity:.85;}
   .ys-empty-note{font-size:12px; opacity:.5; padding:8px 4px;}
   .ys-total{
     font-family:var(--mono); font-size:10.5px; letter-spacing:1px; opacity:.5;
     text-transform:uppercase; margin-top:12px; padding-top:10px; border-top:1px solid var(--line);
   }
+
+  /* ---------- Per-month clickable event list in sidebar (hover dropdown) ---------- */
+  .ys-month-block{position:relative;}
+  .ys-event-list{
+    display:none; flex-direction:column; gap:1px; padding:4px 6px 8px 40px;
+  }
+  .ys-month-block:hover .ys-event-list,
+  .ys-month-block:focus-within .ys-event-list{
+    display:flex;
+  }
+  .ys-row{position:relative;}
+  .ys-month-block:hover .ys-row,
+  .ys-month-block:focus-within .ys-row{
+    background:rgba(26,14,14,0.06);
+  }
+  .ys-month-block.active-month:hover .ys-row,
+  .ys-month-block.active-month:focus-within .ys-row{
+    background:var(--ink);
+  }
+  .ys-event-item{
+    display:flex; align-items:center; gap:8px; width:100%;
+    background:none; border:none; padding:5px 8px; border-radius:3px;
+    text-align:left; font-family:var(--body); font-size:11.5px; color:var(--ink); opacity:.78;
+    transition:background .12s ease, opacity .12s ease, color .12s ease;
+  }
+  .ys-event-item:hover{background:rgba(179,19,26,0.09); opacity:1; color:var(--red);}
+  .ys-event-item .dot{width:6px; height:6px; border-radius:50%; flex-shrink:0;}
+  .ys-event-day{font-family:var(--mono); font-size:10.5px; opacity:.65; min-width:16px; flex-shrink:0;}
+  .ys-event-title{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 
   /* ---------- Edge hover panel (month + year navigator) ---------- */
   .edge-panel{
@@ -467,7 +515,7 @@
 <div class="app" id="app">
   <header class="topbar">
     <div class="brand">
-      <span class="mark"><span style="font-family:var(--display);font-size:18px;letter-spacing:1px;">LANDMARK</span></span>
+      <span class="mark"><span class="logo-word"><span class="logo-L">L</span>ANDMARK</span></span>
       <span class="sub">Store Event Calendar</span>
     </div>
     <div class="header-right" id="headerRight"></div>
@@ -847,20 +895,52 @@
       const monthEvents = events.filter(ev => {
         const d = new Date(ev.date + "T00:00:00");
         return d.getFullYear() === viewYear && d.getMonth() === idx;
-      });
+      }).sort((a,b) => a.date.localeCompare(b.date));
       yearTotal += monthEvents.length;
-      const cats = [...new Set(monthEvents.map(ev => ev.category))];
+
+      const block = document.createElement("div");
+      block.className = "ys-month-block" + (idx === viewMonth ? " active-month" : "");
 
       const row = document.createElement("button");
       row.type = "button";
-      row.className = "ys-row" + (idx === viewMonth ? " active-month" : "");
+      row.className = "ys-row";
       row.innerHTML = `
         <span class="ys-month">${label}</span>
-        <span class="ys-dots">${cats.map(c => `<span class="dot" style="background:${catColor(c)}"></span>`).join("") || ""}</span>
+        <span class="ys-dots">${[...new Set(monthEvents.map(ev => ev.category))].map(c => `<span class="dot" style="background:${catColor(c)}"></span>`).join("")}</span>
         <span class="ys-count">${monthEvents.length || ""}</span>
       `;
+      // Clicking the month header switches the browse view to that month.
       row.onclick = () => { viewMonth = idx; renderAll(); };
-      list.appendChild(row);
+      block.appendChild(row);
+
+      // List every event of that month right under it — click one to jump straight into its date/poster.
+      if(monthEvents.length){
+        const evList = document.createElement("div");
+        evList.className = "ys-event-list";
+        monthEvents.forEach(ev => {
+          const d = new Date(ev.date + "T00:00:00");
+          const evBtn = document.createElement("button");
+          evBtn.type = "button";
+          evBtn.className = "ys-event-item";
+          evBtn.innerHTML = `
+            <span class="dot" style="background:${catColor(ev.category)}"></span>
+            <span class="ys-event-day">${d.getDate()}</span>
+            <span class="ys-event-title">${escapeHtml(ev.title)}</span>
+          `;
+          evBtn.title = `${escapeHtml(ev.title)} — ${d.toLocaleDateString(undefined, {month:"long", day:"numeric"})}`;
+          evBtn.onclick = (e) => {
+            e.stopPropagation();
+            viewYear = d.getFullYear();
+            viewMonth = idx;
+            activeEvent = ev;
+            renderAll();
+          };
+          evList.appendChild(evBtn);
+        });
+        block.appendChild(evList);
+      }
+
+      list.appendChild(block);
     });
     if(!yearTotal){
       list.innerHTML += `<div class="ys-empty-note">No events scheduled yet this year.</div>`;
