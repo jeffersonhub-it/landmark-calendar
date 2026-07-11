@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LANDMARK — Store Event Calendar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1A0E0E;
+    --paper:#F1E7E4;
+    --paper-soft:#FBF4F2;
+    --red:#B3131A;
+    --gold:#8C1A1A;
+    --emerald:#7A1113;
+    --line: rgba(26,14,14,0.14);
+    --line-strong: rgba(26,14,14,0.26);
+    --shadow: 0 22px 48px -14px rgba(26,14,14,0.38);
+    --shadow-soft: 0 8px 20px -8px rgba(26,14,14,0.18);
+    --radius: 6px;
+    --display: 'Anton', sans-serif;
+    --body: 'Work Sans', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    background-image: radial-gradient(circle at 1px 1px, rgba(26,14,14,0.055) 1px, transparent 0);
+    background-size: 22px 22px;
+    color:var(--ink);
+    font-family:var(--body);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  button{font-family:var(--body); cursor:pointer;}
+  a{color:inherit;}
+  ::selection{background:var(--red); color:#fff;}
+  :focus-visible{outline:3px solid var(--red); outline-offset:2px;}
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important; animation:none !important;}
+  }
+
+  /* ---------- Shell ---------- */
+  .app{display:none;}
+  .app.visible{display:block;}
+
+  header.topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 32px; border-bottom:3px solid var(--ink); background:var(--paper-soft);
+    position:sticky; top:0; z-index:40;
+    gap:10px; flex-wrap:wrap;
+  }
+  @media (max-width: 640px){
+    header.topbar{padding:10px 14px; gap:8px;}
+  }
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand .mark{
+    display:inline-flex; align-items:center;
+    background:var(--paper-soft); border:2px solid var(--ink); padding:6px 14px; border-radius:4px;
+    transform:rotate(-1deg);
+  }
+  .brand .mark img{
+    height:26px; display:block;
+  }
+  .brand .sub{
+    font-family:var(--mono); font-size:11px; letter-spacing:2px; text-transform:uppercase;
+    color:var(--ink); opacity:0.55;
+  }
+  @media (max-width: 640px){
+    .brand{gap:8px; flex-wrap:wrap;}
+    .brand .mark{padding:5px 10px;}
+    .brand .mark img{height:20px;}
+    .brand .sub{font-size:9px; letter-spacing:1.2px;}
+  }
+  @media (max-width: 380px){
+    .brand .sub{display:none;}
+  }
+
+  .header-right{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end;}
+  .session-pill{
+    display:flex; align-items:center; gap:8px;
+    font-family:var(--mono); font-size:11px; letter-spacing:1.2px; text-transform:uppercase;
+    padding:6px 12px; border:1.5px solid var(--ink); border-radius:20px;
+  }
+  @media (max-width: 640px){
+    .header-right{gap:6px;}
+    .session-pill{padding:4px 9px; font-size:9px; gap:5px;}
+    .session-pill .who{font-size:11px;}
+    .logout-link{font-size:9px;}
+  }
+  .session-pill.admin{background:var(--emerald); color:#fff; border-color:var(--emerald);}
+  .session-pill.headadmin{background:var(--red); color:#fff; border-color:var(--red);}
+  .session-pill .who{font-weight:700; font-family:var(--body); letter-spacing:0; text-transform:none; font-size:12px;}
+  .icon-btn{
+    width:38px; height:38px; border-radius:50%; border:1.5px solid transparent;
+    background:transparent; display:flex; align-items:center; justify-content:center;
+    opacity:.5; transition:opacity .15s ease, background .15s ease, border-color .15s ease, transform .15s ease;
+  }
+  .icon-btn:hover{opacity:1; background:rgba(26,14,14,0.07); border-color:var(--line-strong); transform:rotate(20deg);}
+  .icon-btn svg{width:19px; height:19px;}
+  .icon-btn.active-dot{opacity:1;}
+  .logout-link{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:1px; text-transform:uppercase;
+    background:none; border:none; opacity:.55; padding:4px 2px; text-decoration:underline;
+  }
+  .logout-link:hover{opacity:1;}
+
+  .btn{
+    font-family:var(--body); font-weight:600; font-size:13px;
+    padding:9px 16px; border-radius:3px; border:2px solid var(--ink);
+    background:transparent; color:var(--ink); letter-spacing:.3px;
+    transition:transform .12s ease, background .12s ease, color .12s ease, border-color .12s ease;
+  }
+  .btn:hover{transform:translateY(-1px);}
+  .btn.primary{background:var(--ink); color:var(--paper-soft);}
+  .btn.primary:hover{background:var(--red); border-color:var(--red);}
+  .btn.gold{background:var(--gold); border-color:var(--gold); color:#fff;}
+  .btn.danger{border-color:var(--red); color:var(--red);}
+  .btn.danger:hover{background:var(--red); color:#fff;}
+  .btn.small{padding:6px 11px; font-size:12px;}
+  .btn.block{width:100%;}
+  .btn:disabled{opacity:.4; cursor:not-allowed; transform:none;}
+
+  main.layout{
+    display:grid; grid-template-columns: 300px 1fr; gap:28px; align-items:start;
+    max-width:1300px; margin:0 auto; padding:30px 32px 80px;
+    transition: grid-template-columns .3s ease;
+  }
+  main.layout.detail-mode{ grid-template-columns: 250px 1fr; }
+  @media (max-width: 880px){
+    main.layout, main.layout.detail-mode{grid-template-columns:1fr; padding:18px;}
+  }
+  @media (max-width: 480px){
+    main.layout, main.layout.detail-mode{padding:12px; gap:16px;}
+  }
+
+  /* ---------- Cards ---------- */
+  .card{
+    background:var(--paper-soft); border:1px solid var(--line-strong); border-radius:var(--radius);
+    padding:18px; box-shadow:var(--shadow-soft);
+  }
+  .card h3{
+    font-family:var(--display); font-size:14px; letter-spacing:1.2px; margin:0 0 12px;
+    text-transform:uppercase; opacity:.85;
+  }
+
+  /* ---------- Sidebar: month display ---------- */
+  .month-display .big-month{font-family:var(--display); font-size:42px; line-height:0.95; letter-spacing:.5px;}
+  .month-display .big-year{font-family:var(--mono); font-size:13px; opacity:.55; letter-spacing:3px;}
+  .layout.detail-mode .month-display .big-month{font-size:28px;}
+  .layout.detail-mode .month-display .big-year{font-size:11px;}
+  .month-nav-row{display:flex; gap:8px; margin-top:14px;}
+  .month-nav-row .btn{flex:1;}
+
+  .year-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:14px;}
+  .year-grid button{
+    font-family:var(--mono); font-size:11px; letter-spacing:1px;
+    padding:8px 4px; border:1px solid var(--line-strong); background:transparent; color:var(--ink);
+    border-radius:2px;
+  }
+  .year-grid button.active{background:var(--ink); color:var(--paper-soft); border-color:var(--ink);}
+  .year-grid button:hover{border-color:var(--red);}
+
+  .legend{display:flex; flex-direction:column; gap:8px; font-size:12px;}
+  .legend .item{display:flex; align-items:center; gap:8px;}
+  .swatch{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
+
+  .back-btn{display:flex; align-items:center; gap:6px; margin-bottom:16px;}
+  .back-btn svg{width:14px; height:14px;}
+
+  /* ---------- Year summary (replaces legend in the sidebar) ---------- */
+  .year-summary-list{display:flex; flex-direction:column; gap:3px;}
+  .ys-row{
+    display:flex; align-items:center; gap:10px; width:100%;
+    background:none; border:none; border-radius:3px; padding:8px 8px;
+    font-family:var(--body); color:var(--ink); text-align:left;
+    transition:background .12s ease;
+  }
+  .ys-row:hover{background:rgba(26,14,14,0.06);}
+  .ys-row.active-month{background:var(--ink); color:var(--paper-soft);}
+  .ys-month{font-family:var(--mono); font-size:11px; letter-spacing:1.5px; width:34px; flex-shrink:0;}
+  .ys-dots{display:flex; gap:4px; flex:1; flex-wrap:wrap;}
+  .ys-dots .dot{width:7px; height:7px; border-radius:50%; flex-shrink:0;}
+  .ys-count{
+    font-family:var(--mono); font-size:10.5px; opacity:.6; min-width:18px; text-align:right;
+  }
+  .ys-row.active-month .ys-count{opacity:.85;}
+  .ys-empty-note{font-size:12px; opacity:.5; padding:8px 4px;}
+  .ys-total{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:1px; opacity:.5;
+    text-transform:uppercase; margin-top:12px; padding-top:10px; border-top:1px solid var(--line);
+  }
+
+  /* ---------- Edge hover panel (month + year navigator) ---------- */
+  .edge-panel{
+    position:fixed; top:120px; left:0; z-index:60;
+    display:flex; align-items:flex-start;
+    transform: translateX(calc(-100% + 46px));
+    transition: transform .28s ease;
+  }
+  .edge-panel:hover, .edge-panel:focus-within{ transform: translateX(0); }
+  .edge-panel-content{
+    width:260px; background:var(--paper-soft); border:1px solid var(--line-strong); border-left:none;
+    border-radius:0 var(--radius) var(--radius) 0; padding:18px; box-shadow:var(--shadow);
+  }
+  .edge-tab{
+    width:46px; flex-shrink:0; background:var(--ink); color:var(--paper-soft);
+    border-radius:0 10px 10px 0; padding:16px 0; display:flex; flex-direction:column;
+    align-items:center; gap:10px; cursor:pointer; box-shadow:var(--shadow-soft);
+  }
+  .edge-tab svg{width:16px; height:16px; opacity:.85; flex-shrink:0;}
+  .edge-tab span{
+    writing-mode:vertical-rl; text-orientation:mixed; font-family:var(--mono);
+    font-size:11px; letter-spacing:2px; opacity:.85;
+  }
+  @media (max-width: 880px){
+    .edge-panel{display:none;}
+  }
+
+  /* ---------- Stage: full calendar (browse mode) ---------- */
+  .stage{min-height:1px;}
+  .calendar-wrap{
+    background:var(--paper-soft); border:1px solid var(--line-strong); border-radius:var(--radius);
+    overflow:hidden; box-shadow:var(--shadow-soft);
+  }
+  .weekdays{display:grid; grid-template-columns:repeat(7,1fr); border-bottom:2px solid var(--ink);}
+  .weekdays div{
+    padding:11px 6px; text-align:center; font-family:var(--mono); font-size:11px;
+    letter-spacing:1.5px; text-transform:uppercase; opacity:.55;
+  }
+  .grid{display:grid; grid-template-columns:repeat(7,1fr); grid-auto-rows:106px;}
+  .cell{
+    border-right:1px solid var(--line); border-bottom:1px solid var(--line);
+    padding:8px; position:relative; overflow:hidden; transition:background .15s ease;
+  }
+  .cell:nth-child(7n){border-right:none;}
+  .cell.outside{background:repeating-linear-gradient(135deg, rgba(26,14,14,0.025) 0 8px, transparent 8px 16px);}
+  .cell.outside .daynum{opacity:.3;}
+  .cell.today{background:rgba(179,19,26,0.12);}
+  .cell.today .daynum{color:var(--red); font-weight:700;}
+  .cell.has-event{cursor:pointer;}
+  .cell.has-event:hover{background:rgba(179,19,26,0.08);}
+  .daynum{font-family:var(--mono); font-size:13px; font-weight:600;}
+  .event-chip{
+    margin-top:6px; font-size:10.5px; padding:3px 6px; border-radius:2px; color:#fff;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600;
+  }
+  .event-more{font-size:10px; opacity:.55; margin-top:2px; font-family:var(--mono);}
+
+  .cat-sale{background:var(--red);}
+  .cat-launch{background:var(--emerald);}
+  .cat-holiday{background:var(--gold); color:#fff !important;}
+  .cat-workshop{background:#7A2E3A;}
+  .cat-clearance{background:#5C1010;}
+  .cat-other{background:var(--ink);}
+
+  /* ---------- Mini calendar (detail mode sidebar) ---------- */
+  .mini-cal{margin-top:2px;}
+  .mini-weekdays{display:grid; grid-template-columns:repeat(7,1fr); margin-bottom:4px;}
+  .mini-weekdays div{text-align:center; font-family:var(--mono); font-size:8.5px; opacity:.5;}
+  .mini-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:3px;}
+  .mini-cell{
+    aspect-ratio:1; display:flex; align-items:center; justify-content:center; position:relative;
+    font-family:var(--mono); font-size:10px; border-radius:3px; color:var(--ink);
+  }
+  .mini-cell.outside{opacity:.28;}
+  .mini-cell.today{outline:1.5px solid var(--red);}
+  .mini-cell.has-event{cursor:pointer; font-weight:700;}
+  .mini-cell.has-event:hover{background:rgba(179,19,26,0.12);}
+  .mini-cell.active-day{background:var(--ink); color:var(--paper-soft) !important;}
+  .mini-dot{
+    position:absolute; bottom:2px; left:50%; transform:translateX(-50%);
+    width:4px; height:4px; border-radius:50%; background:var(--red);
+  }
+
+  /* ---------- Tooltip ---------- */
+  #tooltip{
+    position:fixed; z-index:200; max-width:240px;
+    background:var(--ink); color:var(--paper-soft); padding:10px 12px;
+    border-radius:3px; font-size:12px; pointer-events:none; display:none; box-shadow:var(--shadow);
+  }
+  #tooltip .tt-title{font-weight:700; margin-bottom:3px;}
+  #tooltip .tt-meta{font-family:var(--mono); font-size:10.5px; opacity:.75;}
+
+  /* ---------- Poster stage (detail mode) ---------- */
+  .poster-stage{
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    min-height:520px; padding-top:6px;
+    animation: posterIn .38s ease;
+  }
+  @keyframes posterIn{
+    from{opacity:0; transform:translateY(10px) scale(.98);}
+    to{opacity:1; transform:translateY(0) scale(1);}
+  }
+  .poster{
+    width:min(680px, 94vw); background:var(--paper-soft);
+    border-radius:10px; box-shadow:var(--shadow); position:relative;
+    display:flex; flex-direction:column; border:3px solid var(--ink);
+  }
+  .poster-top{background:var(--ink); color:var(--paper-soft); padding:34px 40px 40px; position:relative;}
+  .poster-cat{
+    display:inline-block; font-family:var(--mono); font-size:12px; letter-spacing:2.5px;
+    text-transform:uppercase; padding:5px 12px; border-radius:20px; margin-bottom:16px; color:#fff;
+  }
+  .poster-title{font-family:var(--display); font-size:56px; line-height:1.02; margin:0; letter-spacing:.5px;}
+  .poster-punch{
+    width:30px; height:30px; border-radius:50%; background:var(--paper);
+    position:absolute; top:-15px; left:50%; transform:translateX(-50%); border:3px solid var(--ink);
+  }
+  .perforation{height:0; border-top:2px dashed var(--line-strong); position:relative;}
+  .perforation::before, .perforation::after{
+    content:''; width:24px; height:24px; border-radius:50%; background:var(--paper);
+    position:absolute; top:-12px; border:3px solid var(--ink);
+  }
+  .perforation::before{left:-14px;}
+  .perforation::after{right:-14px;}
+  .poster-body{padding:36px 40px; display:flex; flex-direction:column; gap:22px;}
+  .poster-stub-row{display:flex; gap:22px;}
+  .stub-date{
+    font-family:var(--display); text-align:center; background:var(--red); color:#fff;
+    border-radius:6px; padding:14px 20px; min-width:96px;
+  }
+  .stub-date .dnum{font-size:40px; line-height:1;}
+  .stub-date .dmon{font-family:var(--mono); font-size:12px; letter-spacing:1.5px;}
+  .stub-facts{display:flex; flex-direction:column; gap:8px; justify-content:center;}
+  .stub-facts div{font-family:var(--mono); font-size:14px;}
+  .stub-facts .label{opacity:.5; margin-right:8px; letter-spacing:1px;}
+  .poster-desc{font-size:16.5px; line-height:1.6; border-top:1px solid var(--line); padding-top:18px;}
+  .poster-footer{display:flex; justify-content:space-between; align-items:center; padding:0 40px 30px;}
+  .poster-footer .by{font-family:var(--mono); font-size:11px; opacity:.5; letter-spacing:.5px;}
+
+  @media (max-width: 600px){
+    .poster-title{font-size:34px;}
+    .poster-top{padding:26px 24px 30px;}
+    .poster-body{padding:26px 24px;}
+    .poster-footer{padding:0 24px 24px; flex-wrap:wrap; gap:10px;}
+    .poster-stub-row{flex-direction:column; gap:14px;}
+    .grid{grid-auto-rows:64px;}
+    .cell{padding:3px;}
+    .daynum{font-size:10px;}
+    .event-chip{font-size:8px; padding:1px 3px; margin-top:2px; line-height:1.2;}
+    .event-more{font-size:7.5px;}
+    .weekdays div{padding:7px 2px; font-size:9px; letter-spacing:0.5px;}
+    .month-display .big-month{font-size:26px;}
+    .month-display .big-year{font-size:10px;}
+    .card{padding:14px;}
+    .card h3{font-size:12px;}
+    .stub-date .dnum{font-size:30px;}
+  }
+  @media (max-width: 360px){
+    .grid{grid-auto-rows:58px;}
+    .cell{padding:2px;}
+    .daynum{font-size:9px;}
+    .event-chip{font-size:7px; padding:1px 2px;}
+  }
+
+  /* ---------- Overlays / modals ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(26,14,14,0.55); backdrop-filter:blur(3px);
+    display:none; align-items:center; justify-content:center; z-index:300; padding:24px;
+  }
+  .overlay.visible{display:flex;}
+  @media (max-width: 480px){
+    .overlay{padding:12px;}
+    .choice-modal, .account-modal, .form-modal, .roster-modal{padding:18px;}
+    .form-row{flex-direction:column; gap:0;}
+  }
+  .modal-close{
+    position:absolute; top:16px; right:16px; background:var(--paper-soft);
+    border:2px solid var(--ink); width:34px; height:34px; border-radius:50%;
+    font-size:16px; font-weight:700; line-height:1;
+  }
+
+  .choice-modal{
+    background:var(--paper-soft); border-radius:var(--radius); padding:24px; width:min(380px, 100%);
+    max-height:80vh; overflow:auto; position:relative; border:2px solid var(--ink);
+  }
+  .choice-modal h3{font-family:var(--display); margin-top:0;}
+  .choice-item{
+    display:flex; align-items:center; gap:10px; padding:11px; border:1.5px solid var(--line-strong);
+    border-radius:3px; margin-bottom:8px; cursor:pointer; transition:border-color .12s ease;
+  }
+  .choice-item:hover{border-color:var(--red);}
+  .choice-dot{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
+
+  .account-modal{
+    background:var(--paper-soft); border-radius:var(--radius); padding:28px; width:min(400px, 100%);
+    max-height:88vh; overflow:auto; position:relative; border:2px solid var(--ink);
+  }
+  .account-modal h3{font-family:var(--display); margin-top:0; font-size:20px; letter-spacing:.5px;}
+  .tabs{display:flex; gap:0; margin-bottom:16px; border-bottom:2px solid var(--ink);}
+  .tabs button{
+    flex:1; background:none; border:none; padding:9px 0; font-weight:700; font-size:12px;
+    letter-spacing:1px; text-transform:uppercase; color:var(--ink); opacity:.42;
+    border-bottom:3px solid transparent; margin-bottom:-2px;
+  }
+  .tabs button.active{opacity:1; border-color:var(--red);}
+  .field{display:flex; flex-direction:column; gap:4px; margin-bottom:11px;}
+  .field label{font-family:var(--mono); font-size:10px; letter-spacing:1.5px; text-transform:uppercase; opacity:.6;}
+  .field input, .field select, .field textarea{
+    font-family:var(--body); font-size:14px; padding:9px 10px;
+    border:1.5px solid var(--line-strong); border-radius:3px; background:#fff; color:var(--ink);
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{border-color:var(--red);}
+  .auth-msg{font-size:12px; margin-top:6px; min-height:16px;}
+  .auth-msg.err{color:var(--red);}
+  .auth-msg.ok{color:var(--emerald);}
+  .hint{font-size:11px; opacity:.5; margin-top:4px; line-height:1.4;}
+
+  .account-summary{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
+  .account-summary .who{font-family:var(--display); font-size:22px;}
+  .account-summary .meta{font-family:var(--mono); font-size:10.5px; opacity:.55;}
+  .account-actions{display:flex; flex-direction:column; gap:10px;}
+
+  .form-modal{
+    background:var(--paper-soft); border-radius:var(--radius); padding:28px; width:min(460px, 100%);
+    max-height:88vh; overflow:auto; position:relative; border:2px solid var(--ink);
+  }
+  .form-modal h3{font-family:var(--display); margin-top:0; font-size:24px;}
+  .form-row{display:flex; gap:10px;}
+  .form-row .field{flex:1;}
+  .form-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:8px;}
+
+  .roster-modal{
+    background:var(--paper-soft); border-radius:var(--radius); padding:28px; width:min(420px, 100%);
+    max-height:80vh; overflow:auto; position:relative; border:2px solid var(--ink);
+  }
+  .roster-modal h3{font-family:var(--display); margin-top:0;}
+  .roster-item{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px; border:1px solid var(--line-strong); border-radius:3px; margin-bottom:8px;
+  }
+  .roster-item .u{font-weight:700;}
+  .roster-item .r{font-family:var(--mono); font-size:10.5px; opacity:.6;}
+  .empty-note{font-size:13px; opacity:.6; padding:10px 0;}
+
+  .sync-banner{
+    position:fixed; bottom:14px; right:14px; z-index:500;
+    font-family:var(--mono); font-size:10.5px; letter-spacing:1px; text-transform:uppercase;
+    padding:8px 14px; border-radius:20px; background:var(--ink); color:var(--paper-soft);
+    box-shadow:var(--shadow-soft); opacity:.85; display:flex; align-items:center; gap:8px;
+  }
+  .sync-banner .dot{width:7px; height:7px; border-radius:50%; background:#5FBF6E;}
+  .sync-banner.offline .dot{background:var(--red);}
+
+  footer.foot{
+    text-align:center; font-family:var(--mono); font-size:11px; letter-spacing:1px;
+    opacity:.4; padding:10px 0 40px;
+  }
+</style>
+</head>
+<body>
+
+<div id="tooltip"></div>
+<div class="sync-banner" id="syncBanner"><span class="dot"></span><span id="syncBannerText">Connecting…</span></div>
+
+<div class="edge-panel" id="edgePanel" tabindex="0" aria-label="Month navigator, hover or focus to expand">
+  <div class="edge-panel-content" id="edgePanelContent"></div>
+  <div class="edge-tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg>
+    <span id="edgeTabLabel">AUG</span>
+  </div>
+</div>
+
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="mark"><span style="font-family:var(--display);font-size:18px;letter-spacing:1px;">LANDMARK</span></span>
+      <span class="sub">Store Event Calendar</span>
+    </div>
+    <div class="header-right" id="headerRight"></div>
+  </header>
+
+  <main class="layout" id="mainLayout">
+    <aside class="sidebar" id="sidebarPanel"></aside>
+    <section class="stage" id="stage"></section>
+  </main>
+
+  <footer class="foot">LANDMARK RETAIL &middot; EVENT CALENDAR &middot; SYNCED VIA FIREBASE</footer>
+</div>
+
+<!-- Choice modal: multiple events on a day -->
+<div class="overlay" id="choiceOverlay">
+  <div class="choice-modal">
+    <button class="modal-close" data-close="choiceOverlay">&times;</button>
+    <h3 id="choiceDateLabel">Events</h3>
+    <div id="choiceList"></div>
+  </div>
+</div>
+
+<!-- Account modal: login / register / admin actions (opened from the gear icon) -->
+<div class="overlay" id="accountOverlay">
+  <div class="account-modal" id="accountModalBody"></div>
+</div>
+
+<!-- Add / edit event modal -->
+<div class="overlay" id="formOverlay">
+  <div class="form-modal">
+    <button class="modal-close" data-close="formOverlay">&times;</button>
+    <h3>New Event</h3>
+    <form id="eventForm">
+      <div class="field">
+        <label>Title</label>
+        <input type="text" id="evTitle" required maxlength="60" placeholder="Summer Clearance Blowout">
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Date</label>
+          <input type="date" id="evDate" required>
+        </div>
+        <div class="field">
+          <label>Time</label>
+          <input type="text" id="evTime" placeholder="10:00 AM – 6:00 PM">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Category</label>
+          <select id="evCategory">
+            <option value="sale">Sale</option>
+            <option value="launch">Launch</option>
+            <option value="holiday">Holiday</option>
+            <option value="workshop">Workshop</option>
+            <option value="clearance">Clearance</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Location</label>
+          <input type="text" id="evLocation" placeholder="Main Floor">
+        </div>
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <textarea id="evDesc" rows="4" maxlength="400" placeholder="What shoppers can expect..."></textarea>
+      </div>
+      <div class="auth-msg err" id="formMsg"></div>
+      <div class="form-actions">
+        <button type="button" class="btn" data-close="formOverlay">Cancel</button>
+        <button type="submit" class="btn primary">Save Event</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Admin roster modal -->
+<div class="overlay" id="rosterOverlay">
+  <div class="roster-modal">
+    <button class="modal-close" data-close="rosterOverlay">&times;</button>
+    <h3>Admin Roster</h3>
+    <div id="rosterList"></div>
+  </div>
+</div>
+
+<!-- ===================== FIREBASE SETUP ===================== -->
+<!-- 1) Create a free project at https://console.firebase.google.com
+     2) Add a Web App, copy the config object it gives you, paste it below.
+     3) Enable "Firestore Database" (in Production or Test mode) in the console.
+     4) Set Firestore Rules (see instructions provided separately) so only admins can write. -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+  // >>>>>>>>>>>>>>>>>> PASTE YOUR FIREBASE CONFIG HERE <<<<<<<<<<<<<<<<<<
+  const firebaseConfig = {
+    apiKey: "AIzaSyAJu8SANbVVGOYuZ2_RUTqqdMmzQXVXR3U",
+    authDomain: "lmcalendar-7f691.firebaseapp.com",
+    projectId: "lmcalendar-7f691",
+    storageBucket: "lmcalendar-7f691.firebasestorage.app",
+    messagingSenderId: "285268400353",
+    appId: "1:285268400353:web:23ccb0b40fc5aa32297fa0",
+    measurementId: "G-K5KHQYY2DW"
+  };
+  // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+</script>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ================= ICONS ================= */
+  const GEAR_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="3"></circle>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+  </svg>`;
+  const BACK_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>`;
+
+  /* ================= DATA LAYER (Firestore, real-time synced) ================= */
+  const ADMIN_PASSCODE = "iss";
+  const LS_SESSION = "meridian_session"; // session stays LOCAL per device/browser on purpose
+
+  const usersCol = db.collection("users");
+  const eventsCol = db.collection("events");
+
+  function loadSession(){ return JSON.parse(localStorage.getItem(LS_SESSION) || "null"); }
+  function saveSession(s){
+    if(s) localStorage.setItem(LS_SESSION, JSON.stringify(s));
+    else localStorage.removeItem(LS_SESSION);
+  }
+  function cryptoId(){ return "e" + Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
+  async function ensureHeadAdmin(){
+    const headRef = usersCol.doc("iss");
+    const snap = await headRef.get();
+    if(!snap.exists){
+      await headRef.set({ username:"ISS", password:"smeagol", role:"headadmin" });
+    }
+  }
+
+  async function seedEventsIfEmpty(){
+    const snap = await eventsCol.limit(1).get();
+    if(!snap.empty) return;
+    const now = new Date();
+    const y = now.getFullYear(), m = now.getMonth();
+    const pad = n => String(n).padStart(2,"0");
+    const d = (day) => `${y}-${pad(m+1)}-${pad(day)}`;
+    const seed = [
+      {date:d(4), title:"Independence Day Sale", category:"sale", time:"9:00 AM – 8:00 PM", location:"Storewide", description:"Storewide markdowns and doorbuster deals to celebrate the holiday weekend.", createdBy:"ISS"},
+      {date:d(12), title:"New Fall Collection Launch", category:"launch", time:"11:00 AM", location:"Main Floor", description:"First look at the new fall lineup with in-store styling sessions.", createdBy:"ISS"},
+      {date:d(18), title:"Kids Craft Workshop", category:"workshop", time:"2:00 PM – 4:00 PM", location:"Community Corner", description:"Free hands-on craft session for kids, materials provided while supplies last.", createdBy:"ISS"},
+      {date:d(18), title:"Loyalty Member Preview", category:"other", time:"6:00 PM", location:"Second Floor", description:"Early access preview night exclusively for loyalty members.", createdBy:"ISS"},
+      {date:d(27), title:"End of Season Clearance", category:"clearance", time:"All Day", location:"Clearance Aisle", description:"Final markdowns before new inventory arrives — up to 70% off.", createdBy:"ISS"},
+    ];
+    const batch = db.batch();
+    seed.forEach(ev => {
+      const id = cryptoId();
+      batch.set(eventsCol.doc(id), Object.assign({id}, ev));
+    });
+    await batch.commit();
+  }
+
+  /* ================= STATE ================= */
+  let users = [];   // kept in sync live from Firestore
+  let events = [];  // kept in sync live from Firestore
+  let session = loadSession();
+  let activeEvent = null; // set -> detail mode, null -> browse mode
+
+  const today = new Date();
+  let viewYear = today.getFullYear();
+  let viewMonth = today.getMonth();
+
+  const MONTH_NAMES = ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
+  const MONTH_SHORT = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+  const WD_MINI = ["S","M","T","W","T","F","S"];
+  const CAT_LABEL = {sale:"Sale", launch:"Launch", holiday:"Holiday", workshop:"Workshop", clearance:"Clearance", other:"Other"};
+
+  function pad(n){ return String(n).padStart(2,"0"); }
+  function dateKey(y,m,d){ return `${y}-${pad(m+1)}-${pad(d)}`; }
+  function eventsOn(key){ return events.filter(e => e.date === key); }
+  function isAdminRole(role){ return role === "admin" || role === "headadmin"; }
+  function escapeHtml(str){
+    return String(str ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+  }
+
+  /* ---- Firestore real-time listeners: any PC that edits data updates everyone else live ---- */
+  const syncBanner = document.getElementById("syncBanner");
+  const syncBannerText = document.getElementById("syncBannerText");
+  let usersLoaded = false, eventsLoaded = false;
+
+  function markConnected(){
+    syncBanner.classList.remove("offline");
+    syncBannerText.textContent = "Synced";
+    setTimeout(() => { syncBanner.style.display = "none"; }, 2000);
+  }
+  function markOffline(err){
+    syncBanner.classList.add("offline");
+    syncBannerText.textContent = "Offline / connection error";
+    syncBanner.style.display = "flex";
+    console.error("Firestore sync error:", err);
+  }
+
+  usersCol.onSnapshot(snap => {
+    users = snap.docs.map(d => d.data());
+    usersLoaded = true;
+    if(usersLoaded && eventsLoaded) markConnected();
+    renderAll();
+  }, markOffline);
+
+  eventsCol.onSnapshot(snap => {
+    events = snap.docs.map(d => d.data());
+    eventsLoaded = true;
+    if(usersLoaded && eventsLoaded) markConnected();
+    // keep the open poster in sync with live edits/deletes from other PCs
+    if(activeEvent){
+      const stillThere = events.find(e => e.id === activeEvent.id);
+      activeEvent = stillThere || null;
+    }
+    renderAll();
+  }, markOffline);
+
+  /* ================= HEADER ================= */
+  const headerRight = document.getElementById("headerRight");
+
+  function renderHeader(){
+    headerRight.innerHTML = "";
+    if(session){
+      const pill = document.createElement("span");
+      pill.className = "session-pill " + (session.role === "headadmin" ? "headadmin" : "admin");
+      pill.innerHTML = `<span>${session.role === "headadmin" ? "Head Admin" : "Admin"}</span><span class="who">${escapeHtml(session.username)}</span>`;
+      headerRight.appendChild(pill);
+
+      const logout = document.createElement("button");
+      logout.className = "logout-link";
+      logout.textContent = "Log out";
+      logout.onclick = () => { session = null; saveSession(null); renderAll(); };
+      headerRight.appendChild(logout);
+    }
+    const gear = document.createElement("button");
+    gear.className = "icon-btn" + (session ? " active-dot" : "");
+    gear.title = session ? "Account & tools" : "Store settings";
+    gear.setAttribute("aria-label", "Settings");
+    gear.innerHTML = GEAR_ICON;
+    gear.onclick = openAccountModal;
+    headerRight.appendChild(gear);
+  }
+
+  /* ================= ACCOUNT MODAL (login / register / admin actions) ================= */
+  function openAccountModal(){
+    renderAccountModal();
+    openOverlay("accountOverlay");
+  }
+
+  function renderAccountModal(){
+    const body = document.getElementById("accountModalBody");
+    body.innerHTML = "";
+
+    if(!session){
+      body.innerHTML = `
+        <h3>Store Access</h3>
+        <div class="tabs">
+          <button type="button" class="tab-btn active" data-tab="login">Log In</button>
+          <button type="button" class="tab-btn" data-tab="register">Register</button>
+        </div>
+        <div id="tabLogin">
+          <div class="field"><label>Username</label><input type="text" id="loginUser" autocomplete="username"></div>
+          <div class="field"><label>Password</label><input type="password" id="loginPass" autocomplete="current-password"></div>
+          <button class="btn primary block" id="loginBtn">Log In</button>
+          <div class="auth-msg err" id="loginMsg"></div>
+          <div class="hint">Store staff only. Everyone else can close this and keep browsing the calendar.</div>
+        </div>
+        <div id="tabRegister" style="display:none;">
+          <div class="field"><label>Choose Username</label><input type="text" id="regUser" autocomplete="username"></div>
+          <div class="field"><label>Choose Password</label><input type="password" id="regPass" autocomplete="new-password"></div>
+          <div class="field"><label>Admin Passcode</label><input type="text" id="regPasscode" placeholder="Required to register"></div>
+          <button class="btn primary block" id="regBtn">Register as Admin</button>
+          <div class="auth-msg err" id="regMsg"></div>
+          <div class="hint">Registration creates a Normal Admin account and requires a valid passcode from store management.</div>
+        </div>
+      `;
+      body.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          body.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          const isLogin = btn.dataset.tab === "login";
+          body.querySelector("#tabLogin").style.display = isLogin ? "block" : "none";
+          body.querySelector("#tabRegister").style.display = isLogin ? "none" : "block";
+        });
+      });
+      body.querySelector("#loginBtn").addEventListener("click", () => {
+        const u = body.querySelector("#loginUser").value.trim();
+        const p = body.querySelector("#loginPass").value;
+        const msg = body.querySelector("#loginMsg");
+        if(!u || !p){ msg.textContent = "Enter a username and password."; return; }
+        const found = users.find(x => x.username.toLowerCase() === u.toLowerCase() && x.password === p);
+        if(!found){ msg.textContent = "Incorrect username or password."; return; }
+        session = { username: found.username, role: found.role };
+        saveSession(session);
+        closeOverlay("accountOverlay");
+        renderAll();
+      });
+      body.querySelector("#regBtn").addEventListener("click", async () => {
+        const u = body.querySelector("#regUser").value.trim();
+        const p = body.querySelector("#regPass").value;
+        const code = body.querySelector("#regPasscode").value.trim();
+        const msg = body.querySelector("#regMsg");
+        if(!u || !p){ msg.textContent = "Choose a username and password."; msg.className = "auth-msg err"; return; }
+        if(u.length < 2){ msg.textContent = "Username must be at least 2 characters."; msg.className = "auth-msg err"; return; }
+        if(users.some(x => x.username.toLowerCase() === u.toLowerCase())){
+          msg.textContent = "That username is already taken."; msg.className = "auth-msg err"; return;
+        }
+        if(code !== ADMIN_PASSCODE){
+          msg.textContent = "Invalid admin passcode. Registration denied."; msg.className = "auth-msg err"; return;
+        }
+        const btn = body.querySelector("#regBtn");
+        btn.disabled = true;
+        try{
+          await usersCol.doc(u.toLowerCase()).set({ username:u, password:p, role:"admin" });
+          msg.textContent = "Account created. You can log in now."; msg.className = "auth-msg ok";
+          body.querySelector("#regUser").value = "";
+          body.querySelector("#regPass").value = "";
+          body.querySelector("#regPasscode").value = "";
+        } catch(err){
+          msg.textContent = "Could not create account. Check your connection."; msg.className = "auth-msg err";
+          console.error(err);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    } else {
+      body.innerHTML = `
+        <h3>Account</h3>
+        <div class="account-summary">
+          <div>
+            <div class="who">${escapeHtml(session.username)}</div>
+            <div class="meta">${session.role === "headadmin" ? "HEAD ADMIN" : "ADMIN"} &middot; FULL ACCESS</div>
+          </div>
+        </div>
+        <div class="account-actions">
+          <button class="btn primary block" id="addEventBtn">+ Add Event</button>
+          ${session.role === "headadmin" ? '<button class="btn gold block" id="rosterBtn">View Admin Roster</button>' : ""}
+          <button class="btn block" data-close="accountOverlay">Close</button>
+        </div>
+      `;
+      body.querySelector("#addEventBtn").onclick = () => { closeOverlay("accountOverlay"); openAddEventForm(); };
+      if(session.role === "headadmin"){
+        body.querySelector("#rosterBtn").onclick = () => { closeOverlay("accountOverlay"); openRoster(); };
+      }
+      body.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", () => closeOverlay(b.dataset.close)));
+    }
+  }
+
+  /* ================= SIDEBAR ================= */
+  const sidebarPanel = document.getElementById("sidebarPanel");
+
+  function renderSidebar(){
+    sidebarPanel.innerHTML = "";
+    if(activeEvent){
+      renderDetailSidebar();
+    } else {
+      renderBrowseSidebar();
+    }
+  }
+
+  function renderBrowseSidebar(){
+    const summaryCard = document.createElement("div");
+    summaryCard.className = "card year-summary";
+    summaryCard.innerHTML = `<h3>${viewYear} Events, Year at a Glance</h3><div class="year-summary-list" id="yearSummaryList"></div>`;
+    sidebarPanel.appendChild(summaryCard);
+
+    const list = summaryCard.querySelector("#yearSummaryList");
+    let yearTotal = 0;
+    MONTH_SHORT.forEach((label, idx) => {
+      const monthEvents = events.filter(ev => {
+        const d = new Date(ev.date + "T00:00:00");
+        return d.getFullYear() === viewYear && d.getMonth() === idx;
+      });
+      yearTotal += monthEvents.length;
+      const cats = [...new Set(monthEvents.map(ev => ev.category))];
+
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "ys-row" + (idx === viewMonth ? " active-month" : "");
+      row.innerHTML = `
+        <span class="ys-month">${label}</span>
+        <span class="ys-dots">${cats.map(c => `<span class="dot" style="background:${catColor(c)}"></span>`).join("") || ""}</span>
+        <span class="ys-count">${monthEvents.length || ""}</span>
+      `;
+      row.onclick = () => { viewMonth = idx; renderAll(); };
+      list.appendChild(row);
+    });
+    if(!yearTotal){
+      list.innerHTML += `<div class="ys-empty-note">No events scheduled yet this year.</div>`;
+    }
+    summaryCard.insertAdjacentHTML("beforeend", `<div class="ys-total">${yearTotal} event${yearTotal === 1 ? "" : "s"} scheduled in ${viewYear}</div>`);
+  }
+
+  function renderDetailSidebar(){
+    const card = document.createElement("div");
+    card.className = "card month-display";
+    card.innerHTML = `
+      <button class="btn small back-btn" id="backBtn">${BACK_ICON}<span>Back to calendar</span></button>
+      <div class="big-month">${MONTH_NAMES[viewMonth]}</div>
+      <div class="big-year">${viewYear}</div>
+      <div class="month-nav-row">
+        <button class="btn small" id="miniPrev">&larr;</button>
+        <button class="btn small" id="miniToday">•</button>
+        <button class="btn small" id="miniNext">&rarr;</button>
+      </div>
+      <div class="mini-cal" id="miniCal"></div>
+    `;
+    sidebarPanel.appendChild(card);
+    card.querySelector("#backBtn").onclick = () => { activeEvent = null; renderAll(); };
+    card.querySelector("#miniPrev").onclick = () => stepMonth(-1);
+    card.querySelector("#miniNext").onclick = () => stepMonth(1);
+    card.querySelector("#miniToday").onclick = () => { viewYear = today.getFullYear(); viewMonth = today.getMonth(); renderAll(); };
+    renderMiniCalendar(card.querySelector("#miniCal"));
+  }
+
+  function renderEdgePanel(){
+    const content = document.getElementById("edgePanelContent");
+    const tabLabel = document.getElementById("edgeTabLabel");
+    tabLabel.textContent = MONTH_SHORT[viewMonth];
+
+    content.innerHTML = `
+      <div class="big-month">${MONTH_NAMES[viewMonth]}</div>
+      <div class="big-year">${viewYear}</div>
+      <div class="month-nav-row">
+        <button class="btn small" id="edgePrevMonth">&larr; PREV</button>
+        <button class="btn small" id="edgeTodayBtn">TODAY</button>
+        <button class="btn small" id="edgeNextMonth">NEXT &rarr;</button>
+      </div>
+      <div class="year-grid" id="edgeYearGrid"></div>
+    `;
+    const yearGrid = content.querySelector("#edgeYearGrid");
+    MONTH_SHORT.forEach((label, idx) => {
+      const b = document.createElement("button");
+      b.textContent = label;
+      if(idx === viewMonth) b.classList.add("active");
+      b.onclick = () => { viewMonth = idx; renderAll(); };
+      yearGrid.appendChild(b);
+    });
+    content.querySelector("#edgePrevMonth").onclick = () => stepMonth(-1);
+    content.querySelector("#edgeNextMonth").onclick = () => stepMonth(1);
+    content.querySelector("#edgeTodayBtn").onclick = () => { viewYear = today.getFullYear(); viewMonth = today.getMonth(); renderAll(); };
+  }
+
+  function stepMonth(dir){
+    viewMonth += dir;
+    if(viewMonth < 0){ viewMonth = 11; viewYear -= 1; }
+    if(viewMonth > 11){ viewMonth = 0; viewYear += 1; }
+    renderAll();
+  }
+
+  function renderMiniCalendar(container){
+    const wd = document.createElement("div");
+    wd.className = "mini-weekdays";
+    WD_MINI.forEach(l => { const s = document.createElement("div"); s.textContent = l; wd.appendChild(s); });
+    container.appendChild(wd);
+
+    const grid = document.createElement("div");
+    grid.className = "mini-grid";
+    const firstOfMonth = new Date(viewYear, viewMonth, 1);
+    const startWeekday = firstOfMonth.getDay();
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const totalCells = Math.ceil((startWeekday + daysInMonth) / 7) * 7;
+
+    for(let i=0;i<totalCells;i++){
+      const cell = document.createElement("div");
+      cell.className = "mini-cell";
+      let dayNum, cellY = viewYear, cellM = viewMonth, outside = false;
+      if(i < startWeekday){ dayNum = 0; outside = true; }
+      else if(i >= startWeekday + daysInMonth){ dayNum = 0; outside = true; }
+      else { dayNum = i - startWeekday + 1; }
+
+      if(outside){
+        cell.classList.add("outside");
+        grid.appendChild(cell);
+        continue;
+      }
+      const key = dateKey(cellY, cellM, dayNum);
+      const dayEvents = eventsOn(key);
+      cell.textContent = dayNum;
+      const isToday = (cellY === today.getFullYear() && cellM === today.getMonth() && dayNum === today.getDate());
+      if(isToday) cell.classList.add("today");
+      if(activeEvent && activeEvent.date === key) cell.classList.add("active-day");
+      if(dayEvents.length){
+        cell.classList.add("has-event");
+        const dot = document.createElement("span");
+        dot.className = "mini-dot";
+        dot.style.background = catColor(dayEvents[0].category);
+        cell.appendChild(dot);
+        cell.addEventListener("click", () => onDayClick(dayEvents, key));
+        cell.addEventListener("mouseenter", (e) => showTooltip(e, dayEvents, key));
+        cell.addEventListener("mousemove", positionTooltip);
+        cell.addEventListener("mouseleave", hideTooltip);
+      }
+      grid.appendChild(cell);
+    }
+    container.appendChild(grid);
+  }
+
+  function catColor(cat){
+    const map = {sale:"var(--red)", launch:"var(--emerald)", holiday:"var(--gold)", workshop:"#7A2E3A", clearance:"#5C1010", other:"var(--ink)"};
+    return map[cat] || "var(--ink)";
+  }
+
+  /* ================= STAGE ================= */
+  const stage = document.getElementById("stage");
+  const mainLayout = document.getElementById("mainLayout");
+  const tooltip = document.getElementById("tooltip");
+
+  function renderStage(){
+    stage.innerHTML = "";
+    mainLayout.classList.toggle("detail-mode", !!activeEvent);
+    if(activeEvent){
+      renderPosterStage();
+    } else {
+      renderCalendarStage();
+    }
+  }
+
+  function renderCalendarStage(){
+    const wrap = document.createElement("div");
+    wrap.className = "calendar-wrap";
+    wrap.innerHTML = `
+      <div class="weekdays">
+        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+      </div>
+      <div class="grid" id="grid"></div>
+    `;
+    stage.appendChild(wrap);
+    const grid = wrap.querySelector("#grid");
+
+    const firstOfMonth = new Date(viewYear, viewMonth, 1);
+    const startWeekday = firstOfMonth.getDay();
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate();
+    const totalCells = Math.ceil((startWeekday + daysInMonth) / 7) * 7;
+
+    for(let i=0;i<totalCells;i++){
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      let dayNum, cellY = viewYear, cellM = viewMonth, outside = false;
+
+      if(i < startWeekday){ dayNum = daysInPrevMonth - startWeekday + i + 1; cellM = viewMonth - 1; outside = true; }
+      else if(i >= startWeekday + daysInMonth){ dayNum = i - startWeekday - daysInMonth + 1; cellM = viewMonth + 1; outside = true; }
+      else { dayNum = i - startWeekday + 1; }
+      if(cellM < 0){ cellM = 11; cellY -= 1; }
+      if(cellM > 11){ cellM = 0; cellY += 1; }
+
+      const key = dateKey(cellY, cellM, dayNum);
+      const dayEvents = eventsOn(key);
+
+      if(outside) cell.classList.add("outside");
+      const isToday = (cellY === today.getFullYear() && cellM === today.getMonth() && dayNum === today.getDate());
+      if(isToday) cell.classList.add("today");
+      if(dayEvents.length) cell.classList.add("has-event");
+
+      const num = document.createElement("div");
+      num.className = "daynum";
+      num.textContent = dayNum;
+      cell.appendChild(num);
+
+      dayEvents.slice(0,2).forEach(ev => {
+        const chip = document.createElement("div");
+        chip.className = "event-chip cat-" + ev.category;
+        chip.textContent = ev.title;
+        cell.appendChild(chip);
+      });
+      if(dayEvents.length > 2){
+        const more = document.createElement("div");
+        more.className = "event-more";
+        more.textContent = `+${dayEvents.length - 2} more`;
+        cell.appendChild(more);
+      }
+      if(dayEvents.length){
+        cell.addEventListener("mouseenter", (e) => showTooltip(e, dayEvents, key));
+        cell.addEventListener("mousemove", positionTooltip);
+        cell.addEventListener("mouseleave", hideTooltip);
+        cell.addEventListener("click", () => onDayClick(dayEvents, key));
+      }
+      grid.appendChild(cell);
+    }
+  }
+
+  function renderPosterStage(){
+    const ev = activeEvent;
+    const d = new Date(ev.date + "T00:00:00");
+    const dayNum = d.getDate();
+    const monShort = MONTH_SHORT[d.getMonth()];
+    const canDelete = session && (session.role === "headadmin" || (session.role === "admin" && ev.createdBy === session.username));
+
+    const posterStage = document.createElement("div");
+    posterStage.className = "poster-stage";
+    posterStage.innerHTML = `
+      <div class="poster">
+        <div class="poster-top">
+          <span class="poster-cat cat-${ev.category}">${CAT_LABEL[ev.category] || "Event"}</span>
+          <h2 class="poster-title">${escapeHtml(ev.title)}</h2>
+          <div class="poster-punch"></div>
+        </div>
+        <div class="perforation"></div>
+        <div class="poster-body">
+          <div class="poster-stub-row">
+            <div class="stub-date">
+              <div class="dnum">${dayNum}</div>
+              <div class="dmon">${monShort}</div>
+            </div>
+            <div class="stub-facts">
+              <div><span class="label">TIME</span>${escapeHtml(ev.time || "TBA")}</div>
+              <div><span class="label">WHERE</span>${escapeHtml(ev.location || "In-store")}</div>
+              <div><span class="label">YEAR</span>${d.getFullYear()}</div>
+            </div>
+          </div>
+          <div class="poster-desc">${escapeHtml(ev.description || "No further details provided for this event.")}</div>
+        </div>
+        <div class="poster-footer">
+          <span class="by">POSTED BY ${escapeHtml(ev.createdBy || "STORE TEAM")}</span>
+          ${canDelete ? `<button class="btn danger small" id="deleteEventBtn">Delete Event</button>` : ""}
+        </div>
+      </div>
+    `;
+    stage.appendChild(posterStage);
+    if(canDelete){
+      posterStage.querySelector("#deleteEventBtn").onclick = async () => {
+        if(confirm("Remove this event from the calendar?")){
+          try{
+            await eventsCol.doc(ev.id).delete();
+            activeEvent = null;
+            renderAll();
+          } catch(err){
+            alert("Could not delete the event. Check your connection and try again.");
+            console.error(err);
+          }
+        }
+      };
+    }
+  }
+
+  /* ================= TOOLTIP ================= */
+  function showTooltip(e, dayEvents, key){
+    const d = new Date(key + "T00:00:00");
+    const label = d.toLocaleDateString(undefined, {month:"short", day:"numeric"});
+    tooltip.innerHTML = dayEvents.slice(0,3).map(ev => `
+      <div style="margin-bottom:6px;">
+        <div class="tt-title">${escapeHtml(ev.title)}</div>
+        <div class="tt-meta">${CAT_LABEL[ev.category] || "Event"} &middot; ${escapeHtml(ev.time || label)}</div>
+      </div>
+    `).join("") + (dayEvents.length > 3 ? `<div class="tt-meta">+${dayEvents.length-3} more — click to view</div>` : `<div class="tt-meta">Click to view poster</div>`);
+    tooltip.style.display = "block";
+    positionTooltip(e);
+  }
+  function positionTooltip(e){
+    const offset = 14;
+    let x = e.clientX + offset;
+    let y = e.clientY + offset;
+    const rect = tooltip.getBoundingClientRect();
+    if(x + rect.width > window.innerWidth - 12) x = e.clientX - rect.width - offset;
+    if(y + rect.height > window.innerHeight - 12) y = e.clientY - rect.height - offset;
+    tooltip.style.left = x + "px";
+    tooltip.style.top = y + "px";
+  }
+  function hideTooltip(){ tooltip.style.display = "none"; }
+
+  function onDayClick(dayEvents, key){
+    hideTooltip();
+    if(dayEvents.length === 1){
+      activeEvent = dayEvents[0];
+      renderAll();
+    } else {
+      openChoiceModal(dayEvents, key);
+    }
+  }
+
+  /* ================= MODALS (generic helpers) ================= */
+  function openOverlay(id){ document.getElementById(id).classList.add("visible"); }
+  function closeOverlay(id){ document.getElementById(id).classList.remove("visible"); }
+
+  document.querySelectorAll("[data-close]").forEach(btn => {
+    btn.addEventListener("click", () => closeOverlay(btn.dataset.close));
+  });
+  document.querySelectorAll(".overlay").forEach(ov => {
+    ov.addEventListener("click", (e) => { if(e.target === ov) ov.classList.remove("visible"); });
+  });
+  document.addEventListener("keydown", (e) => {
+    if(e.key === "Escape") document.querySelectorAll(".overlay.visible").forEach(o => o.classList.remove("visible"));
+  });
+
+  function openChoiceModal(dayEvents, key){
+    const d = new Date(key + "T00:00:00");
+    document.getElementById("choiceDateLabel").textContent =
+      d.toLocaleDateString(undefined, {weekday:"long", month:"long", day:"numeric"});
+    const list = document.getElementById("choiceList");
+    list.innerHTML = "";
+    dayEvents.forEach(ev => {
+      const item = document.createElement("div");
+      item.className = "choice-item";
+      item.innerHTML = `<span class="choice-dot cat-${ev.category}"></span>
+        <div>
+          <div style="font-weight:700;">${escapeHtml(ev.title)}</div>
+          <div style="font-size:11px; opacity:.6;">${CAT_LABEL[ev.category]} ${ev.time ? "&middot; " + escapeHtml(ev.time) : ""}</div>
+        </div>`;
+      item.onclick = () => { closeOverlay("choiceOverlay"); activeEvent = ev; renderAll(); };
+      list.appendChild(item);
+    });
+    openOverlay("choiceOverlay");
+  }
+
+  /* ================= ADD EVENT FORM ================= */
+  const eventForm = document.getElementById("eventForm");
+  function openAddEventForm(){
+    eventForm.reset();
+    document.getElementById("formMsg").textContent = "";
+    const safeDay = Math.min(today.getDate(), new Date(viewYear, viewMonth+1, 0).getDate());
+    const d = new Date(viewYear, viewMonth, safeDay);
+    document.getElementById("evDate").value = d.toISOString().slice(0,10);
+    openOverlay("formOverlay");
+  }
+  eventForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("formMsg");
+    if(!session || !isAdminRole(session.role)){ msg.textContent = "You must be logged in as an admin to add events."; return; }
+    const title = document.getElementById("evTitle").value.trim();
+    const date = document.getElementById("evDate").value;
+    const time = document.getElementById("evTime").value.trim();
+    const category = document.getElementById("evCategory").value;
+    const location = document.getElementById("evLocation").value.trim();
+    const description = document.getElementById("evDesc").value.trim();
+    if(!title || !date){ msg.textContent = "Title and date are required."; return; }
+
+    const id = cryptoId();
+    const newEvent = { id, title, date, time, category, location, description, createdBy: session.username };
+    const submitBtn = eventForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    try{
+      await eventsCol.doc(id).set(newEvent);
+      closeOverlay("formOverlay");
+      const d = new Date(date + "T00:00:00");
+      viewYear = d.getFullYear(); viewMonth = d.getMonth();
+      activeEvent = newEvent;
+      renderAll();
+    } catch(err){
+      msg.textContent = "Could not save the event. Check your connection and try again.";
+      console.error(err);
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  /* ================= ADMIN ROSTER ================= */
+  function openRoster(){
+    const list = document.getElementById("rosterList");
+    const admins = users.filter(u => u.role === "admin");
+    list.innerHTML = "";
+    if(!admins.length){
+      list.innerHTML = `<div class="empty-note">No admin accounts have registered yet.</div>`;
+    } else {
+      admins.forEach(u => {
+        const item = document.createElement("div");
+        item.className = "roster-item";
+        item.innerHTML = `<span class="u">${escapeHtml(u.username)}</span><span class="r">NORMAL ADMIN</span>`;
+        list.appendChild(item);
+      });
+    }
+    openOverlay("rosterOverlay");
+  }
+
+  /* ================= MASTER RENDER ================= */
+  function renderAll(){
+    renderHeader();
+    renderSidebar();
+    renderStage();
+    renderEdgePanel();
+  }
+
+  document.getElementById("app").classList.add("visible");
+  renderAll();
+
+  // Kick off one-time setup (head admin + seed events), then Firestore listeners take over.
+  ensureHeadAdmin().catch(err => console.error("ensureHeadAdmin failed:", err));
+  seedEventsIfEmpty().catch(err => console.error("seedEventsIfEmpty failed:", err));
+})();
+</script>
+</body>
+</html>
