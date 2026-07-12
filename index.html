@@ -151,6 +151,19 @@
   .session-pill.admin{background:var(--emerald); color:#fff; border-color:var(--emerald);}
   .session-pill.headadmin{background:var(--red); color:#fff; border-color:var(--red);}
   .session-pill .who{font-weight:700; font-family:var(--body); letter-spacing:0; text-transform:none; font-size:12px;}
+  .event-count-pill{
+    display:flex; align-items:center; gap:6px;
+    font-family:var(--mono); font-size:11.5px; letter-spacing:.5px;
+    padding:6px 12px; border:1.5px solid var(--line-strong); border-radius:999px;
+    background:var(--paper-soft); color:var(--ink); opacity:.85; box-shadow:var(--shadow-soft);
+    animation:popIn .25s var(--ease);
+  }
+  .event-count-pill svg{width:14px; height:14px; opacity:.7; flex-shrink:0;}
+  .event-count-pill span{font-weight:700;}
+  @media (max-width: 640px){
+    .event-count-pill{padding:4px 10px; font-size:10px; gap:4px;}
+    .event-count-pill svg{width:12px; height:12px;}
+  }
   .icon-btn{
     width:38px; height:38px; border-radius:50%; border:1.5px solid transparent;
     background:transparent; display:flex; align-items:center; justify-content:center;
@@ -794,6 +807,7 @@
     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
   </svg>`;
   const BACK_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>`;
+  const CAL_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"></rect><path d="M16 2.5v4M8 2.5v4M3 9.5h18"></path></svg>`;
 
   /* ================= DATA LAYER (Firestore, real-time synced) ================= */
   const ADMIN_PASSCODE = "smeagol";
@@ -916,6 +930,12 @@
       logout.onclick = () => { session = null; saveSession(null); renderAll(); };
       headerRight.appendChild(logout);
     }
+    const countPill = document.createElement("span");
+    countPill.className = "event-count-pill";
+    countPill.title = "Total events on the calendar";
+    countPill.innerHTML = `${CAL_ICON}<span>${events.length}</span>`;
+    headerRight.appendChild(countPill);
+
     const gear = document.createElement("button");
     gear.className = "icon-btn" + (session ? " active-dot" : "");
     gear.title = session ? "Account & tools" : "Store settings";
