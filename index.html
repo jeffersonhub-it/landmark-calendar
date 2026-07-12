@@ -364,6 +364,14 @@
     overflow:hidden; box-shadow:var(--shadow-soft); width:100%; max-width:100%;
     animation:slideUp .35s var(--ease);
   }
+  @keyframes calSlideFromRight{ from{opacity:0; transform:translateX(38px);} to{opacity:1; transform:translateX(0);} }
+  @keyframes calSlideFromLeft{ from{opacity:0; transform:translateX(-38px);} to{opacity:1; transform:translateX(0);} }
+  @keyframes calJumpIn{ from{opacity:0; transform:scale(.985) translateY(6px);} to{opacity:1; transform:scale(1) translateY(0);} }
+  .calendar-wrap.slide-next{ animation: calSlideFromRight .34s var(--ease); }
+  .calendar-wrap.slide-prev{ animation: calSlideFromLeft .34s var(--ease); }
+  .calendar-wrap.slide-jump{ animation: calJumpIn .28s var(--ease); }
+  .grid{ animation: fadeIn .25s var(--ease) .04s both; }
+  .cell.has-event .event-chip{ animation: fadeIn .3s var(--ease) .08s both; }
   .weekdays{display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); border-bottom:1px solid var(--line-strong);}
   .weekdays div{
     padding:12px 6px; text-align:center; font-family:var(--mono); font-size:10.5px;
@@ -840,6 +848,7 @@
   const today = new Date();
   let viewYear = today.getFullYear();
   let viewMonth = today.getMonth();
+  let monthNavDir = 0;
 
   const MONTH_NAMES = ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
   const MONTH_SHORT = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
@@ -1149,6 +1158,7 @@
   }
 
   function stepMonth(dir){
+    monthNavDir = dir;
     viewMonth += dir;
     if(viewMonth < 0){ viewMonth = 11; viewYear -= 1; }
     if(viewMonth > 11){ viewMonth = 0; viewYear += 1; }
@@ -1225,7 +1235,8 @@
 
   function renderCalendarStage(){
     const wrap = document.createElement("div");
-    wrap.className = "calendar-wrap";
+    wrap.className = "calendar-wrap" + (monthNavDir === 1 ? " slide-next" : monthNavDir === -1 ? " slide-prev" : " slide-jump");
+    monthNavDir = 0;
     wrap.innerHTML = `
       <div class="weekdays">
         <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
