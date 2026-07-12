@@ -298,6 +298,10 @@
       background:var(--paper-soft); border:1px solid var(--line-strong); border-radius:var(--radius-sm);
       box-shadow:var(--shadow); padding:8px;
     }
+    /* Touch devices have no hover — keep the selected month's events visible without needing hover/focus */
+    .ys-month-block.active-month .ys-event-list{
+      display:flex;
+    }
     .ys-total{ flex:0 0 auto; }
   }
   @media (max-width: 480px){
