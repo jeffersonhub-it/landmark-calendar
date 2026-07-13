@@ -1124,7 +1124,10 @@
       list.appendChild(block);
     });
     if(!yearTotal){
-      list.innerHTML += `<div class="ys-empty-note">No events scheduled yet this year.</div>`;
+      const emptyNote = document.createElement("div");
+      emptyNote.className = "ys-empty-note";
+      emptyNote.textContent = "No events scheduled yet this year.";
+      list.appendChild(emptyNote);
     }
     summaryCard.insertAdjacentHTML("beforeend", `<div class="ys-total">${yearTotal} event${yearTotal === 1 ? "" : "s"} scheduled in ${viewYear}</div>`);
   }
