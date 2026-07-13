@@ -861,7 +861,11 @@
   let session = loadSession();
   let activeEvent = null; // set -> detail mode, null -> browse mode
 
-  const today = new Date();
+ const today = new Date();
+  function getTodayParts(){
+    const t = new Date();
+    return { y: t.getFullYear(), m: t.getMonth(), d: t.getDate() };
+  }
   let viewYear = today.getFullYear();
   let viewMonth = today.getMonth();
   let monthNavDir = 0;
@@ -1219,7 +1223,8 @@
       const key = dateKey(cellY, cellM, dayNum);
       const dayEvents = eventsOn(key);
       cell.textContent = dayNum;
-      const isToday = (cellY === today.getFullYear() && cellM === today.getMonth() && dayNum === today.getDate());
+      const tp1 = getTodayParts();
+      const isToday = (cellY === tp1.y && cellM === tp1.m && dayNum === tp1.d);
       if(isToday) cell.classList.add("today");
       if(activeEvent && activeEvent.date === key) cell.classList.add("active-day");
       if(dayEvents.length){
@@ -1292,7 +1297,8 @@
       const dayEvents = eventsOn(key);
 
       if(outside) cell.classList.add("outside");
-      const isToday = (cellY === today.getFullYear() && cellM === today.getMonth() && dayNum === today.getDate());
+      const tp2 = getTodayParts();
+      const isToday = (cellY === tp2.y && cellM === tp2.m && dayNum === tp2.d);
       if(isToday) cell.classList.add("today");
       if(dayEvents.length) cell.classList.add("has-event");
 
