@@ -832,8 +832,9 @@
   }
 
   async function seedEventsIfEmpty(){
-    const snap = await eventsCol.limit(1).get();
-    if(!snap.empty) return;
+    const flagRef = db.collection("meta").doc("seeded");
+    const flagSnap = await flagRef.get();
+    if(flagSnap.exists) return;   // na-seed na dati, huwag na ulitin kahit ma-empty
     const now = new Date();
     const y = now.getFullYear(), m = now.getMonth();
     const pad = n => String(n).padStart(2,"0");
@@ -850,6 +851,7 @@
       const id = cryptoId();
       batch.set(eventsCol.doc(id), Object.assign({id}, ev));
     });
+    batch.set(flagRef, { seededAt: new Date().toISOString() });
     await batch.commit();
   }
 
