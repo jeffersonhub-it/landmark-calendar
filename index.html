@@ -254,6 +254,25 @@ body{
     padding:8px 4px; border:1px solid var(--line-strong); background:transparent; color:var(--ink);
     border-radius:7px; transition:all .16s var(--ease);
   }
+.year-select-row{
+  display:flex; align-items:center; gap:8px; margin-top:14px;
+}
+.year-select-row select{
+  flex:1; font-family:var(--mono); font-size:12px; letter-spacing:1px;
+  padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:8px;
+  background:var(--paper-soft); color:var(--ink); cursor:pointer;
+  transition:border-color .16s ease;
+}
+.year-select-row select:focus{ border-color:var(--red); }
+.year-nav-btn{
+  width:34px; height:34px; border-radius:8px; border:1.5px solid var(--line-strong);
+  background:var(--paper-soft); color:var(--ink); flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  transition:transform .16s var(--ease), background .16s var(--ease), border-color .16s var(--ease), color .16s var(--ease);
+}
+.year-nav-btn:hover:not(:disabled){ background:var(--red); border-color:var(--red); color:#fff; }
+.year-nav-btn:disabled{ opacity:.3; cursor:not-allowed; }
+.year-nav-btn svg{ width:14px; height:14px; }
   .year-grid button.active{background:var(--ink); color:var(--paper-soft); border-color:var(--ink);}
   .year-grid button:hover{border-color:var(--red); transform:translateY(-1px);}
 
@@ -809,7 +828,7 @@ body{
     <section class="stage" id="stage"></section>
   </main>
 
-  <footer class="foot">LANDMARK RETAIL &middot; EVENT CALENDAR &middot; SYNCED VIA FIREBASE</footer>
+  <footer class="foot">LANDMARK RETAIL &middot; EVENT CALENDAR &middot; SYNCED VIA FIREBASE &middot; Event: 5</footer>
 </div>
 
 <!-- Choice modal: multiple events on a day -->
@@ -1277,10 +1296,21 @@ body{
     renderMiniCalendar(card.querySelector("#miniCal"));
   }
 
+  const MIN_YEAR = today.getFullYear() - 1; // isang taon pabalik
+  const MAX_YEAR = 2027;                    // isang taon pasulong, hanggang 2027 lang
+
   function renderEdgePanel(){
     const content = document.getElementById("edgePanelContent");
     const tabLabel = document.getElementById("edgeTabLabel");
     tabLabel.textContent = MONTH_SHORT[viewMonth];
+
+    const ARROW_LEFT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>`;
+    const ARROW_RIGHT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>`;
+
+    let yearOptions = "";
+    for(let y = MIN_YEAR; y <= MAX_YEAR; y++){
+      yearOptions += `<option value="${y}" ${y === viewYear ? "selected" : ""}>${y}</option>`;
+    }
 
     content.innerHTML = `
       <div class="big-month">${MONTH_NAMES[viewMonth]}</div>
@@ -1289,6 +1319,11 @@ body{
         <button class="btn small" id="edgePrevMonth">&larr; PREV</button>
         <button class="btn small" id="edgeTodayBtn">TODAY</button>
         <button class="btn small" id="edgeNextMonth">NEXT &rarr;</button>
+      </div>
+      <div class="year-select-row">
+        <button type="button" class="year-nav-btn" id="edgePrevYear" ${viewYear <= MIN_YEAR ? "disabled" : ""} aria-label="Previous year">${ARROW_LEFT}</button>
+        <select id="edgeYearSelect" aria-label="Jump to year">${yearOptions}</select>
+        <button type="button" class="year-nav-btn" id="edgeNextYear" ${viewYear >= MAX_YEAR ? "disabled" : ""} aria-label="Next year">${ARROW_RIGHT}</button>
       </div>
       <div class="year-grid" id="edgeYearGrid"></div>
     `;
@@ -1303,13 +1338,31 @@ body{
     content.querySelector("#edgePrevMonth").onclick = () => stepMonth(-1);
     content.querySelector("#edgeNextMonth").onclick = () => stepMonth(1);
     content.querySelector("#edgeTodayBtn").onclick = () => { viewYear = today.getFullYear(); viewMonth = today.getMonth(); renderAll(); };
+
+    content.querySelector("#edgeYearSelect").onchange = (e) => {
+      viewYear = parseInt(e.target.value, 10);
+      monthNavDir = 0;
+      renderAll();
+    };
+    content.querySelector("#edgePrevYear").onclick = () => {
+      if(viewYear > MIN_YEAR){ viewYear -= 1; monthNavDir = 0; renderAll(); }
+    };
+    content.querySelector("#edgeNextYear").onclick = () => {
+      if(viewYear < MAX_YEAR){ viewYear += 1; monthNavDir = 0; renderAll(); }
+    };
   }
 
   function stepMonth(dir){
+    let newMonth = viewMonth + dir;
+    let newYear = viewYear;
+    if(newMonth < 0){ newMonth = 11; newYear -= 1; }
+    if(newMonth > 11){ newMonth = 0; newYear += 1; }
+
+    if(newYear < MIN_YEAR || newYear > MAX_YEAR) return; // huwag lumagpas sa allowed range
+
     monthNavDir = dir;
-    viewMonth += dir;
-    if(viewMonth < 0){ viewMonth = 11; viewYear -= 1; }
-    if(viewMonth > 11){ viewMonth = 0; viewYear += 1; }
+    viewMonth = newMonth;
+    viewYear = newYear;
     renderAll();
   }
 
