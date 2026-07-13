@@ -1221,6 +1221,13 @@ body{
       list.appendChild(emptyNote);
     }
     summaryCard.insertAdjacentHTML("beforeend", `<div class="ys-total">${yearTotal} event${yearTotal === 1 ? "" : "s"} scheduled in ${viewYear}</div>`);
+
+    // I-scroll papunta sa piniling buwan (importante lalo na sa mobile
+    // horizontal scroll list, para hindi nakatutok sa Jan-Apr palagi)
+    const activeBlock = list.querySelector(".ys-month-block.active-month");
+    if(activeBlock){
+      activeBlock.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    }
   }
 
   function renderDetailSidebar(){
