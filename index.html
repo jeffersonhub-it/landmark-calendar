@@ -395,6 +395,31 @@ body{
     overflow:hidden; box-shadow:var(--shadow-soft); width:100%; max-width:100%;
     animation:slideUp .35s var(--ease);
   }
+.cal-nav-bar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 18px; border-bottom:1px solid var(--line-strong);
+  background:var(--paper-soft);
+}
+.cal-nav-label{
+  font-family:var(--display); font-size:15px; letter-spacing:1px;
+  text-transform:uppercase; opacity:.85;
+}
+.cal-nav-btn{
+  width:36px; height:36px; border-radius:50%; border:1.5px solid var(--line-strong);
+  background:var(--paper-soft); color:var(--ink); flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  transition:transform .16s var(--ease), background .16s var(--ease), border-color .16s var(--ease), color .16s var(--ease);
+}
+.cal-nav-btn:hover{ background:var(--red); border-color:var(--red); color:#fff; transform:scale(1.06); }
+.cal-nav-btn:active{ transform:scale(0.96); }
+.cal-nav-btn svg{ width:16px; height:16px; }
+@media (max-width: 880px){
+  .cal-nav-bar{ padding:10px 8px; }
+  .cal-nav-label{ font-size:13px; }
+  /* mas malaking tap target sa mobile para madaling pindutin ng daliri */
+  .cal-nav-btn{ width:42px; height:42px; }
+  .cal-nav-btn svg{ width:18px; height:18px; }
+}
   @keyframes calSlideFromRight{ from{opacity:0; transform:translateX(38px);} to{opacity:1; transform:translateX(0);} }
   @keyframes calSlideFromLeft{ from{opacity:0; transform:translateX(-38px);} to{opacity:1; transform:translateX(0);} }
   @keyframes calJumpIn{ from{opacity:0; transform:scale(.985) translateY(6px);} to{opacity:1; transform:scale(1) translateY(0);} }
@@ -1361,13 +1386,26 @@ body{
     const wrap = document.createElement("div");
     wrap.className = "calendar-wrap" + (monthNavDir === 1 ? " slide-next" : monthNavDir === -1 ? " slide-prev" : " slide-jump");
     monthNavDir = 0;
+
+    const ARROW_LEFT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>`;
+    const ARROW_RIGHT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>`;
+
     wrap.innerHTML = `
+      <div class="cal-nav-bar">
+        <button type="button" class="cal-nav-btn" id="calPrevBtn" aria-label="Previous month">${ARROW_LEFT}</button>
+        <div class="cal-nav-label">${MONTH_NAMES[viewMonth]} ${viewYear}</div>
+        <button type="button" class="cal-nav-btn" id="calNextBtn" aria-label="Next month">${ARROW_RIGHT}</button>
+      </div>
       <div class="weekdays">
         <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
       </div>
       <div class="grid" id="grid"></div>
     `;
     stage.appendChild(wrap);
+
+    wrap.querySelector("#calPrevBtn").onclick = () => stepMonth(-1);
+    wrap.querySelector("#calNextBtn").onclick = () => stepMonth(1);
+
     const grid = wrap.querySelector("#grid");
 
     const firstOfMonth = new Date(viewYear, viewMonth, 1);
