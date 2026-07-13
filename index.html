@@ -265,14 +265,14 @@ body{
 }
 .year-select-row select:focus{ border-color:var(--red); }
 .year-nav-btn{
-  width:34px; height:34px; border-radius:8px; border:1.5px solid var(--line-strong);
-  background:var(--paper-soft); color:var(--ink); flex-shrink:0;
+  width:28px; height:28px; border-radius:50%; border:none;
+  background:transparent; color:var(--ink); opacity:.45; flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
-  transition:transform .16s var(--ease), background .16s var(--ease), border-color .16s var(--ease), color .16s var(--ease);
+  transition:opacity .16s var(--ease), background .16s var(--ease);
 }
-.year-nav-btn:hover:not(:disabled){ background:var(--red); border-color:var(--red); color:#fff; }
-.year-nav-btn:disabled{ opacity:.3; cursor:not-allowed; }
-.year-nav-btn svg{ width:14px; height:14px; }
+.year-nav-btn:hover:not(:disabled){ opacity:.85; background:rgba(26,14,14,0.07); }
+.year-nav-btn:disabled{ opacity:.15; cursor:not-allowed; }
+.year-nav-btn svg{ width:13px; height:13px; }
   .year-grid button.active{background:var(--ink); color:var(--paper-soft); border-color:var(--ink);}
   .year-grid button:hover{border-color:var(--red); transform:translateY(-1px);}
 
@@ -1199,11 +1199,40 @@ body{
     }
   }
 
+  const ARROW_LEFT_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>`;
+  const ARROW_RIGHT_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>`;
+
   function renderBrowseSidebar(){
     const summaryCard = document.createElement("div");
     summaryCard.className = "card year-summary";
-    summaryCard.innerHTML = `<h3>${viewYear} Events, Year at a Glance</h3><div class="year-summary-list" id="yearSummaryList"></div>`;
+
+    let yearOptionsMobile = "";
+    for(let y = MIN_YEAR; y <= MAX_YEAR; y++){
+      yearOptionsMobile += `<option value="${y}" ${y === viewYear ? "selected" : ""}>${y}</option>`;
+    }
+
+    summaryCard.innerHTML = `
+      <div class="year-select-row mobile-year-row">
+        <button type="button" class="year-nav-btn" id="mYearPrev" ${viewYear <= MIN_YEAR ? "disabled" : ""} aria-label="Previous year">${ARROW_LEFT_SVG}</button>
+        <select id="mYearSelect" aria-label="Jump to year">${yearOptionsMobile}</select>
+        <button type="button" class="year-nav-btn" id="mYearNext" ${viewYear >= MAX_YEAR ? "disabled" : ""} aria-label="Next year">${ARROW_RIGHT_SVG}</button>
+      </div>
+      <h3>${viewYear} Events, Year at a Glance</h3>
+      <div class="year-summary-list" id="yearSummaryList"></div>
+    `;
     sidebarPanel.appendChild(summaryCard);
+
+    summaryCard.querySelector("#mYearSelect").onchange = (e) => {
+      viewYear = parseInt(e.target.value, 10);
+      monthNavDir = 0;
+      renderAll();
+    };
+    summaryCard.querySelector("#mYearPrev").onclick = () => {
+      if(viewYear > MIN_YEAR){ viewYear -= 1; monthNavDir = 0; renderAll(); }
+    };
+    summaryCard.querySelector("#mYearNext").onclick = () => {
+      if(viewYear < MAX_YEAR){ viewYear += 1; monthNavDir = 0; renderAll(); }
+    };
 
     const list = summaryCard.querySelector("#yearSummaryList");
     let yearTotal = 0;
