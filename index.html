@@ -1681,11 +1681,15 @@ const USER_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
               <div><div class="label">BY</div><div class="value">${escapeHtml(ev.createdBy || "Store Team")}</div></div>
             </div>
           </div>
+          <div class="poster-v2-footer"></div>
+        </div>
+        <div class="poster-v2-corner"></div>
+      </div>
     `;
     stage.appendChild(posterStage);
     if(canDelete){
       const footer = posterStage.querySelector(".poster-v2-footer");
-      const delBtn = document.createElement("button");
+const delBtn = document.createElement("button");
       delBtn.className = "btn danger small";
       delBtn.textContent = "Delete Event";
       delBtn.onclick = async () => {
