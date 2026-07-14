@@ -439,12 +439,19 @@ body{
   .cal-nav-btn{ width:42px; height:42px; }
   .cal-nav-btn svg{ width:18px; height:18px; }
 }
-  @keyframes calSlideFromRight{ from{opacity:0; transform:translateX(38px);} to{opacity:1; transform:translateX(0);} }
-  @keyframes calSlideFromLeft{ from{opacity:0; transform:translateX(-38px);} to{opacity:1; transform:translateX(0);} }
-  @keyframes calJumpIn{ from{opacity:0; transform:scale(.985) translateY(6px);} to{opacity:1; transform:scale(1) translateY(0);} }
-  .calendar-wrap.slide-next{ animation: calSlideFromRight .34s var(--ease); }
-  .calendar-wrap.slide-prev{ animation: calSlideFromLeft .34s var(--ease); }
-  .calendar-wrap.slide-jump{ animation: calJumpIn .28s var(--ease); }
+  @keyframes calSlideFromRight{ from{opacity:0; transform:translateX(70px);} to{opacity:1; transform:translateX(0);} }
+  @keyframes calSlideFromLeft{ from{opacity:0; transform:translateX(-70px);} to{opacity:1; transform:translateX(0);} }
+  @keyframes calJumpIn{ from{opacity:0; transform:scale(.96) translateY(10px);} to{opacity:1; transform:scale(1) translateY(0);} }
+  .calendar-wrap.slide-next{ animation: calSlideFromRight .45s var(--ease); }
+  .calendar-wrap.slide-prev{ animation: calSlideFromLeft .45s var(--ease); }
+  .calendar-wrap.slide-jump{ animation: calJumpIn .4s var(--ease); }
+
+  /* transition din para sa mini-calendar (detail/poster view) at sa edge panel */
+  .mini-month-label, .mini-cal,
+  .edge-month-label{ display:block; }
+  .mini-month-label.slide-next, .mini-cal.slide-next, .edge-month-label.slide-next{ animation: calSlideFromRight .45s var(--ease); }
+  .mini-month-label.slide-prev, .mini-cal.slide-prev, .edge-month-label.slide-prev{ animation: calSlideFromLeft .45s var(--ease); }
+  .mini-month-label.slide-jump, .mini-cal.slide-jump, .edge-month-label.slide-jump{ animation: calJumpIn .4s var(--ease); }
   .grid{ animation: fadeIn .25s var(--ease) .04s both; }
   .cell.has-event .event-chip{ animation: fadeIn .3s var(--ease) .08s both; }
   .weekdays{display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); border-bottom:1px solid var(--line-strong);}
@@ -475,10 +482,9 @@ body{
   .event-more{font-size:10px; opacity:.5; margin-top:3px; font-family:var(--mono);}
 
   .cat-sale{background:var(--red);}
-  .cat-launch{background:var(--emerald);}
-  .cat-holiday{background:var(--gold); color:#fff !important;}
-  .cat-workshop{background:#7A2E3A;}
-  .cat-clearance{background:#5C1010;}
+  .cat-event{background:#5C1010;}
+  .cat-b1t1{background:var(--emerald);}
+  .cat-meeting{background:var(--gold);}
   .cat-other{background:var(--ink);}
 
   /* ---------- Mini calendar (detail mode sidebar) ---------- */
@@ -741,7 +747,8 @@ body{
     max-height:88vh; overflow:auto; position:relative; box-shadow:var(--shadow);
   }
   .form-modal h3{font-family:var(--display); margin-top:0; font-size:22px; font-weight:400;}
-  .form-row{display:flex; gap:10px;}
+  .form-row{display:flex; gap:10px; flex-wrap:wrap;}
+  .form-row .field{flex:1; min-width:120px;}
   .form-row .field{flex:1;}
   .form-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:8px;}
 
@@ -828,7 +835,7 @@ body{
     <section class="stage" id="stage"></section>
   </main>
 
-  <footer class="foot">LANDMARK RETAIL &middot; EVENT CALENDAR &middot; SYNCED VIA FIREBASE &middot; Event: 5</footer>
+  <footer class="foot">LANDMARK RETAIL &middot; EVENT CALENDAR &middot; SYNCED VIA FIREBASE</footer>
 </div>
 
 <!-- Choice modal: multiple events on a day -->
@@ -855,25 +862,26 @@ body{
         <label>Title</label>
         <input type="text" id="evTitle" required maxlength="60" placeholder="Summer Clearance Blowout">
       </div>
-      <div class="form-row">
-        <div class="field">
-          <label>Date</label>
-          <input type="date" id="evDate" required>
-        </div>
-        <div class="field">
-          <label>Time</label>
-          <input type="text" id="evTime" placeholder="10:00 AM – 6:00 PM">
-        </div>
-      </div>
+<div class="form-row">
+  <div class="field">
+    <label>Date</label>
+    <input type="date" id="evDate" required>
+  </div>
+  <div class="field">
+    <label>Time</label>
+    <input type="text" id="evTime" placeholder="9:00 AM – 8:00 PM">
+  </div>
+</div>
       <div class="form-row">
         <div class="field">
           <label>Category</label>
           <select id="evCategory">
             <option value="sale">Sale</option>
-            <option value="launch">Launch</option>
-            <option value="holiday">Holiday</option>
-            <option value="workshop">Workshop</option>
-            <option value="clearance">Clearance</option>
+            <option value="event">Event</option>
+            <option value="b1t1">B1T1</option>
+            <option value="meeting">Meeting</option>
+            <option value="important matters">Important Matters</option>
+	    <option value="celebration">Celebration</option>
             <option value="other">Other</option>
           </select>
         </div>
@@ -881,6 +889,10 @@ body{
           <label>Location</label>
           <input type="text" id="evLocation" placeholder="Main Floor">
         </div>
+      </div>
+      <div class="field">
+        <label>By</label>
+        <input type="text" id="evContact" placeholder="Department">
       </div>
       <div class="field">
         <label>Description</label>
@@ -1004,7 +1016,41 @@ body{
   const MONTH_NAMES = ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
   const MONTH_SHORT = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
   const WD_MINI = ["S","M","T","W","T","F","S"];
-  const CAT_LABEL = {sale:"Sale", launch:"Launch", holiday:"Holiday", workshop:"Workshop", clearance:"Clearance", other:"Other"};
+
+  // JS-driven transition (Web Animations API) — hindi ito naaapektuhan ng
+  // CSS "prefers-reduced-motion { animation:none !important }" override,
+  // kaya guaranteed itong tatakbo tuwing nagpapalit ng buwan.
+  function runSlideAnim(el, dir){
+    if(!el || !el.animate) return;
+    const distance = 70;
+    let keyframes;
+    if(dir === 1){
+      keyframes = [
+        { opacity: 0, transform: `translateX(${distance}px)` },
+        { opacity: 1, transform: "translateX(0)" }
+      ];
+    } else if(dir === -1){
+      keyframes = [
+        { opacity: 0, transform: `translateX(-${distance}px)` },
+        { opacity: 1, transform: "translateX(0)" }
+      ];
+    } else {
+      keyframes = [
+        { opacity: 0, transform: "scale(.96) translateY(10px)" },
+        { opacity: 1, transform: "scale(1) translateY(0)" }
+      ];
+    }
+    el.animate(keyframes, { duration: dir === 0 ? 400 : 450, easing: "cubic-bezier(.22,1,.36,1)", fill: "both" });
+  }
+  const CAT_LABEL = {
+    sale: "Sale",
+    event: "Event",
+    b1t1: "B1T1",
+    meeting: "Meeting",
+    "important matters": "Important Matters",
+    celebration: "Celebration",
+    other: "Other"
+};
 
   function pad(n){ return String(n).padStart(2,"0"); }
   function dateKey(y,m,d){ return `${y}-${pad(m+1)}-${pad(d)}`; }
@@ -1317,18 +1363,23 @@ summaryCard.querySelector("#mYearNext").onclick = () => {
   function renderDetailSidebar(){
     const card = document.createElement("div");
     card.className = "card month-display";
+    const navClass = monthNavDir === 1 ? "slide-next" : monthNavDir === -1 ? "slide-prev" : "slide-jump";
     card.innerHTML = `
       <button class="btn small back-btn" id="backBtn">${BACK_ICON}<span>Back to calendar</span></button>
-      <div class="big-month">${MONTH_NAMES[viewMonth]}</div>
-      <div class="big-year">${viewYear}</div>
+      <div class="mini-month-label ${navClass}">
+        <div class="big-month">${MONTH_NAMES[viewMonth]}</div>
+        <div class="big-year">${viewYear}</div>
+      </div>
       <div class="month-nav-row">
         <button class="btn small" id="miniPrev">&larr;</button>
         <button class="btn small" id="miniToday">•</button>
         <button class="btn small" id="miniNext">&rarr;</button>
       </div>
-      <div class="mini-cal" id="miniCal"></div>
+      <div class="mini-cal ${navClass}" id="miniCal"></div>
     `;
     sidebarPanel.appendChild(card);
+    runSlideAnim(card.querySelector(".mini-month-label"), monthNavDir);
+    runSlideAnim(card.querySelector("#miniCal"), monthNavDir);
     card.querySelector("#backBtn").onclick = () => { activeEvent = null; renderAll(); };
     card.querySelector("#miniPrev").onclick = () => stepMonth(-1);
     card.querySelector("#miniNext").onclick = () => stepMonth(1);
@@ -1352,9 +1403,12 @@ summaryCard.querySelector("#mYearNext").onclick = () => {
       yearOptions += `<option value="${y}" ${y === viewYear ? "selected" : ""}>${y}</option>`;
     }
 
+    const navClass = monthNavDir === 1 ? "slide-next" : monthNavDir === -1 ? "slide-prev" : "slide-jump";
     content.innerHTML = `
-      <div class="big-month">${MONTH_NAMES[viewMonth]}</div>
-      <div class="big-year">${viewYear}</div>
+      <div class="edge-month-label ${navClass}">
+        <div class="big-month">${MONTH_NAMES[viewMonth]}</div>
+        <div class="big-year">${viewYear}</div>
+      </div>
       <div class="month-nav-row">
         <button class="btn small" id="edgePrevMonth">&larr; PREV</button>
         <button class="btn small" id="edgeTodayBtn">TODAY</button>
@@ -1367,6 +1421,7 @@ summaryCard.querySelector("#mYearNext").onclick = () => {
       </div>
       <div class="year-grid" id="edgeYearGrid"></div>
     `;
+    runSlideAnim(content.querySelector(".edge-month-label"), monthNavDir);
     const yearGrid = content.querySelector("#edgeYearGrid");
     MONTH_SHORT.forEach((label, idx) => {
       const b = document.createElement("button");
@@ -1406,6 +1461,7 @@ content.querySelector("#edgeNextYear").onclick = () => {
     let newMonth = viewMonth + dir;
     let newYear = viewYear;
     if(newMonth < 0){ newMonth = 11; newYear -= 1; }
+    if(newMonth > 11){ newMonth = 0; newYear += 1; }
 
     if(newYear < MIN_YEAR || newYear > MAX_YEAR) return; // huwag lumagpas sa allowed range
 
@@ -1465,9 +1521,17 @@ content.querySelector("#edgeNextYear").onclick = () => {
   }
 
   function catColor(cat){
-    const map = {sale:"var(--red)", launch:"var(--emerald)", holiday:"var(--gold)", workshop:"#7A2E3A", clearance:"#5C1010", other:"var(--ink)"};
+    const map = {
+        sale: "var(--red)",
+        event: "#5C1010",
+        b1t1: "var(--emerald)",
+        meeting: "var(--gold)",
+        "important matters": "#7A2E3A",
+        celebration: "#9B2D8E",   // <-- dark magenta/purple, may contrast sa puting text
+        other: "var(--ink)"
+    };
     return map[cat] || "var(--ink)";
-  }
+}
 
   /* ================= STAGE ================= */
   const stage = document.getElementById("stage");
@@ -1487,7 +1551,7 @@ content.querySelector("#edgeNextYear").onclick = () => {
   function renderCalendarStage(){
     const wrap = document.createElement("div");
     wrap.className = "calendar-wrap" + (monthNavDir === 1 ? " slide-next" : monthNavDir === -1 ? " slide-prev" : " slide-jump");
-    monthNavDir = 0;
+    const calNavDirForAnim = monthNavDir;
 
     const ARROW_LEFT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>`;
     const ARROW_RIGHT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>`;
@@ -1504,6 +1568,7 @@ content.querySelector("#edgeNextYear").onclick = () => {
       <div class="grid" id="grid"></div>
     `;
     stage.appendChild(wrap);
+    runSlideAnim(wrap, calNavDirForAnim);
 
     wrap.querySelector("#calPrevBtn").onclick = () => stepMonth(-1);
     wrap.querySelector("#calNextBtn").onclick = () => stepMonth(1);
@@ -1542,11 +1607,12 @@ content.querySelector("#edgeNextYear").onclick = () => {
       cell.appendChild(num);
 
       dayEvents.slice(0,2).forEach(ev => {
-        const chip = document.createElement("div");
-        chip.className = "event-chip cat-" + ev.category;
-        chip.textContent = ev.title;
-        cell.appendChild(chip);
-      });
+    const chip = document.createElement("div");
+    chip.className = "event-chip";
+    chip.style.background = catColor(ev.category);
+    chip.textContent = ev.title;
+    cell.appendChild(chip);
+});
       if(dayEvents.length > 2){
         const more = document.createElement("div");
         more.className = "event-more";
@@ -1581,7 +1647,7 @@ content.querySelector("#edgeNextYear").onclick = () => {
     const CAL_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>`;
     const CLOCK_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>`;
     const PIN_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>`;
-
+const USER_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
     // hinahati ang title sa dalawang linya para ma-highlight sa red yung
     // huling salita, gaya ng "SALE!" sa sample design
     const titleWords = ev.title.trim().split(/\s+/);
@@ -1610,13 +1676,11 @@ content.querySelector("#edgeNextYear").onclick = () => {
               <span class="ic">${PIN_SVG}</span>
               <div><div class="label">WHERE</div><div class="value">${escapeHtml(ev.location || "In-store")}</div></div>
             </div>
+            <div class="poster-v2-fact">
+              <span class="ic">${USER_SVG}</span>
+              <div><div class="label">BY</div><div class="value">${escapeHtml(ev.createdBy || "Store Team")}</div></div>
+            </div>
           </div>
-          <div class="poster-v2-footer">
-            <span>POSTED BY ${escapeHtml(ev.createdBy || "STORE TEAM")}</span>
-          </div>
-        </div>
-        <div class="poster-v2-corner"></div>
-      </div>
     `;
     stage.appendChild(posterStage);
     if(canDelete){
@@ -1699,7 +1763,7 @@ content.querySelector("#edgeNextYear").onclick = () => {
     dayEvents.forEach(ev => {
       const item = document.createElement("div");
       item.className = "choice-item";
-      item.innerHTML = `<span class="choice-dot cat-${ev.category}"></span>
+      item.innerHTML = `<span class="choice-dot" style="background:${catColor(ev.category)}"></span>
         <div>
           <div style="font-weight:700;">${escapeHtml(ev.title)}</div>
           <div style="font-size:11px; opacity:.6;">${CAT_LABEL[ev.category]} ${ev.time ? "&middot; " + escapeHtml(ev.time) : ""}</div>
@@ -1729,11 +1793,12 @@ content.querySelector("#edgeNextYear").onclick = () => {
     const time = document.getElementById("evTime").value.trim();
     const category = document.getElementById("evCategory").value;
     const location = document.getElementById("evLocation").value.trim();
+    const contact = document.getElementById("evContact").value.trim();
     const description = document.getElementById("evDesc").value.trim();
     if(!title || !date){ msg.textContent = "Title and date are required."; return; }
 
     const id = cryptoId();
-    const newEvent = { id, title, date, time, category, location, description, createdBy: session.username };
+    const newEvent = { id, title, date, time, category, location, contact, description, createdBy: session.username };
     const submitBtn = eventForm.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
     try{
@@ -1806,6 +1871,7 @@ content.querySelector("#edgeNextYear").onclick = () => {
     renderSidebar();
     renderStage();
     renderEdgePanel();
+    monthNavDir = 0;
   }
 
 document.getElementById("logoHome").addEventListener("click", () => {
