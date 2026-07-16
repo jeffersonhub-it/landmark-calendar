@@ -1108,7 +1108,7 @@ body{
     if(session){
       const pill = document.createElement("span");
       pill.className = "session-pill " + (session.role === "headadmin" ? "headadmin" : "admin");
-      pill.innerHTML = `<span>${session.role === "headadmin" ? "Head Admin" : "Admin"}</span><span class="who">${escapeHtml(session.username)}</span>`;
+      pill.innerHTML = `<span>${session.role === "headadmin" ? "Head Admin" : "User"}</span><span class="who">${escapeHtml(session.username)}</span>`;
       headerRight.appendChild(pill);
 
       const logout = document.createElement("button");
@@ -1194,21 +1194,27 @@ body{
         if(!u || !p){ msg.textContent = "Choose a username and password."; msg.className = "auth-msg err"; return; }
         if(u.length < 2){ msg.textContent = "Username must be at least 2 characters."; msg.className = "auth-msg err"; return; }
         if(users.some(x => x.username.toLowerCase() === u.toLowerCase())){
-          msg.textContent = "That username is already taken."; msg.className = "auth-msg err"; return;
+          msg.textContent = "That username is already taken."; msg.className = "auth-msg err";
+          alert("Registration failed: that username is already taken. Please choose a different one.");
+          return;
         }
         if(code !== ADMIN_PASSCODE){
-          msg.textContent = "Invalid admin passcode. Registration denied."; msg.className = "auth-msg err"; return;
+          msg.textContent = "Invalid admin passcode. Registration denied."; msg.className = "auth-msg err";
+          alert("Registration failed: invalid admin passcode. Please check with store management and try again.");
+          return;
         }
         const btn = body.querySelector("#regBtn");
         btn.disabled = true;
         try{
           await usersCol.doc(u.toLowerCase()).set({ username:u, password:p, role:"admin" });
           msg.textContent = "Account created. You can log in now."; msg.className = "auth-msg ok";
+          alert(`Registration successful! Account "${u}" has been created. You can now log in.`);
           body.querySelector("#regUser").value = "";
           body.querySelector("#regPass").value = "";
           body.querySelector("#regPasscode").value = "";
         } catch(err){
           msg.textContent = "Could not create account. Check your connection."; msg.className = "auth-msg err";
+          alert("Registration failed: could not create the account. Please check your internet connection and try again.");
           console.error(err);
         } finally {
           btn.disabled = false;
@@ -1220,7 +1226,7 @@ body{
         <div class="account-summary">
           <div>
             <div class="who">${escapeHtml(session.username)}</div>
-            <div class="meta">${session.role === "headadmin" ? "HEAD ADMIN" : "ADMIN"} &middot; FULL ACCESS</div>
+            <div class="meta">${session.role === "headadmin" ? "HEAD ADMIN" : "USER"} &middot; FULL ACCESS</div>
           </div>
         </div>
         <div class="account-actions">
@@ -1852,7 +1858,7 @@ const delBtn = document.createElement("button");
         item.innerHTML = `
           <div class="roster-item">
             <span class="u">${escapeHtml(u.username)}</span>
-            <span class="r">${u.role === "headadmin" ? "HEAD ADMIN" : "NORMAL ADMIN"}</span>
+            <span class="r">${u.role === "headadmin" ? "HEAD ADMIN" : "USER"}</span>
           </div>
           <div class="roster-cred">
             <span class="label">PASSWORD</span>
