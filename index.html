@@ -996,6 +996,15 @@ body{
   </div>
 </div>
 
+<!-- Year overview modal: total events grouped by year -->
+<div class="overlay" id="yearOverviewOverlay">
+  <div class="choice-modal">
+    <button class="modal-close" data-close="yearOverviewOverlay">&times;</button>
+    <h3>Events by Year</h3>
+    <div id="yearOverviewList"></div>
+  </div>
+</div>
+
 <!-- ===================== FIREBASE SETUP ===================== -->
 <!-- 1) Create a free project at https://console.firebase.google.com
      2) Add a Web App, copy the config object it gives you, paste it below.
@@ -1193,11 +1202,13 @@ body{
       logout.onclick = () => { session = null; saveSession(null); renderAll(); };
       headerRight.appendChild(logout);
     }
-    const countPill = document.createElement("span");
-    countPill.className = "event-count-pill";
-    countPill.title = "Total events on the calendar";
-    countPill.innerHTML = `${CAL_ICON}<span>${events.length}</span>`;
-    headerRight.appendChild(countPill);
+    const countPill = document.createElement("button");
+countPill.type = "button";
+countPill.className = "event-count-pill";
+countPill.title = "Click to see events by year";
+countPill.innerHTML = `${CAL_ICON}<span>${events.length}</span>`;
+countPill.onclick = openYearOverview;
+headerRight.appendChild(countPill);
 
     const gear = document.createElement("button");
     gear.className = "icon-btn" + (session ? " active-dot" : "");
@@ -1843,7 +1854,48 @@ const delBtn = document.createElement("button");
   document.addEventListener("keydown", (e) => {
     if(e.key === "Escape") document.querySelectorAll(".overlay.visible").forEach(o => o.classList.remove("visible"));
   });
+function openYearOverview(){
+  const list = document.getElementById("yearOverviewList");
+  list.innerHTML = "";
 
+  const byYear = {};
+  events.forEach(ev => {
+    const y = new Date(ev.date + "T00:00:00").getFullYear();
+    if(!byYear[y]) byYear[y] = [];
+    byYear[y].push(ev);
+  });
+
+  const years = Object.keys(byYear).map(Number).sort((a,b) => a - b);
+
+  if(!years.length){
+    list.innerHTML = `<div class="empty-note">No events on the calendar yet.</div>`;
+  } else {
+    years.forEach(y => {
+      const yearEvents = byYear[y].sort((a,b) => a.date.localeCompare(b.date));
+      const item = document.createElement("div");
+      item.className = "choice-item";
+      item.style.flexDirection = "column";
+      item.style.alignItems = "stretch";
+      item.style.cursor = "pointer";
+      item.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+          <span style="font-family:var(--display); font-size:16px;">${y}</span>
+          <span class="ys-count">${yearEvents.length} event${yearEvents.length === 1 ? "" : "s"}</span>
+        </div>
+      `;
+      item.onclick = () => {
+        closeOverlay("yearOverviewOverlay");
+        viewYear = y;
+        viewMonth = new Date(yearEvents[0].date + "T00:00:00").getMonth();
+        activeEvent = null;
+        renderAll();
+      };
+      list.appendChild(item);
+    });
+  }
+
+  openOverlay("yearOverviewOverlay");
+}
   function openChoiceModal(dayEvents, key){
     const d = new Date(key + "T00:00:00");
     document.getElementById("choiceDateLabel").textContent =
