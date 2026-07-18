@@ -2363,29 +2363,26 @@ function openYearOverview(){
         if(canDeleteUser){
           const delBtn = item.querySelector(".roster-del-btn");
           delBtn.addEventListener("click", async () => {
-            const eventCount = theirEvents.length;
-            const confirmMsg = eventCount
-              ? `Remove admin "${u.username}"? This will also permanently delete ${eventCount} event${eventCount === 1 ? "" : "s"} they created. This cannot be undone.`
-              : `Remove admin "${u.username}"? This cannot be undone.`;
-            if(!confirm(confirmMsg)) return;
-            delBtn.disabled = true;
-            delBtn.textContent = "Removing…";
-            try{
-              // Delete the user account together with all events they created,
-              // in a single atomic batch so nothing is left half-deleted.
-              const batch = db.batch();
-              batch.delete(usersCol.doc(u.username.toLowerCase()));
-              theirEvents.forEach(ev => batch.delete(eventsCol.doc(ev.id)));
-              await batch.commit();
-              logActivity("delete", `Deleted user "${u.username}" and ${eventCount} of their event${eventCount === 1 ? "" : "s"}`);
-            } catch(err){
-              alert("Could not remove this user. Check your connection and try again.");
-              console.error(err);
-              delBtn.disabled = false;
-              delBtn.textContent = "Delete User";
-            }
-          });
-        }
+  const eventCount = theirEvents.length;
+  const confirmMsg = eventCount
+    ? `Remove admin "${u.username}"? This will also permanently delete ${eventCount} event${eventCount === 1 ? "" : "s"} they created. This cannot be undone.`
+    : `Remove admin "${u.username}"? This cannot be undone.`;
+  if(!confirm(confirmMsg)) return;
+  delBtn.disabled = true;
+  delBtn.textContent = "Removing…";
+  try{
+    const batch = db.batch();
+    batch.delete(usersCol.doc(u.username.toLowerCase()));
+    theirEvents.forEach(ev => batch.delete(eventsCol.doc(ev.id)));
+    await batch.commit();
+    logActivity("delete", `Deleted user "${u.username}" and ${eventCount} of their event${eventCount === 1 ? "" : "s"}`);
+  } catch(err){
+    alert("Could not remove this user. Check your connection and try again.");
+    console.error(err);
+    delBtn.disabled = false;
+    delBtn.textContent = "Delete User";
+  }
+});
     openOverlay("rosterOverlay");
   }
 
