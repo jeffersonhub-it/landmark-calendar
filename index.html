@@ -1155,15 +1155,17 @@ body {
 
   /* ================= DATA LAYER (Firestore, real-time synced) ================= */
   const LS_SESSION = "meridian_session"; // session stays LOCAL per device/browser on purpose
+  const IDLE_LIMIT_MS = 15 * 60 * 1000; // auto log-out after 15 minutes of no activity
 
  const usersCol = firebaseReady ? db.collection("users") : null;
 const eventsCol = firebaseReady ? db.collection("events") : null;
 const activityCol = firebaseReady ? db.collection("activityLog") : null;
 
-  function loadSession(){ return JSON.parse(localStorage.getItem(LS_SESSION) || "null"); }
+  // sessionStorage (not localStorage) so the session clears automatically when the browser/tab is closed
+  function loadSession(){ return JSON.parse(sessionStorage.getItem(LS_SESSION) || "null"); }
   function saveSession(s){
-    if(s) localStorage.setItem(LS_SESSION, JSON.stringify(s));
-    else localStorage.removeItem(LS_SESSION);
+    if(s) sessionStorage.setItem(LS_SESSION, JSON.stringify(s));
+    else sessionStorage.removeItem(LS_SESSION);
   }
 const ROLE_VIEWONLY = "viewonly";
 const ROLE_PENDING = "pending"; // newly registered accounts sit here until the Head Admin approves them
@@ -1177,6 +1179,29 @@ function roleLabel(role){
   return "User";
 }
 
+// Shared log-out routine used by the manual "Log out" button AND the idle-timeout auto log-out
+function performLogout(){
+  session = null;
+  saveSession(null);
+  document.getElementById("loadingScreen").classList.remove("hidden");
+  renderAll();
+}
+
+// Auto log-out after IDLE_LIMIT_MS of no mouse/keyboard/touch/scroll activity
+let idleTimer = null;
+function resetIdleTimer(){
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => {
+    if(session){
+      performLogout();
+      alert("You've been logged out due to inactivity.");
+    }
+  }, IDLE_LIMIT_MS);
+}
+["mousemove", "mousedown", "keydown", "scroll", "touchstart"].forEach(evt => {
+  document.addEventListener(evt, resetIdleTimer, { passive: true });
+});
+
 // Shared login routine used by both the View Only and Administrator modals
 function completeLogin(user){
   session = { username: user.username, role: user.role };
@@ -1184,6 +1209,7 @@ function completeLogin(user){
   document.getElementById("loadingScreen").classList.add("hidden");
   closeOverlay("accountOverlay");
   closeOverlay("viewOnlyOverlay");
+  resetIdleTimer();
   logActivity("login", `Logged in as ${roleLabel(user.role)}`);
   renderAll();
 }
@@ -1452,12 +1478,7 @@ function renderViewOnlyModal(){
       const logout = document.createElement("button");
       logout.className = "logout-link";
       logout.textContent = "Log out";
-      logout.onclick = () => {
-  session = null;
-  saveSession(null);
-  document.getElementById("loadingScreen").classList.remove("hidden");
-  renderAll();
-};
+      logout.onclick = performLogout;
       headerRight.appendChild(logout);
     }
     const countPill = document.createElement("button");
