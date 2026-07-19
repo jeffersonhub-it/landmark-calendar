@@ -909,7 +909,8 @@ body {
   .log-who{font-weight:700; font-size:12.5px;}
   .log-time{font-family:var(--mono); font-size:10px; opacity:.5; white-space:nowrap;}
   .log-detail{font-size:12px; opacity:.75; margin-top:2px;}
-  .log-filters{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;}
+  .log-filters{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; align-items:center;}
+  .log-filters #clearLogBtn{margin-left:auto;}
   .log-filter-btn{
     font-family:var(--mono); font-size:10px; letter-spacing:.5px; text-transform:uppercase;
     padding:5px 10px; border-radius:999px; border:1px solid var(--line-strong);
@@ -2417,7 +2418,7 @@ function openYearOverview(){
     ];
     const filterBar = `<div class="log-filters">${filters.map(f =>
       `<button type="button" class="log-filter-btn${activityLogFilter === f.key ? " active" : ""}" data-log-filter="${f.key}">${f.label}</button>`
-    ).join("")}</div>`;
+    ).join("")}<button type="button" class="btn danger small" id="clearLogBtn"${activityLog.length ? "" : " disabled"}>Clear Log</button></div>`;
 
     const filtered = activityLogFilter === "all" ? activityLog : activityLog.filter(a => a.type === activityLogFilter);
 
@@ -2447,6 +2448,27 @@ function openYearOverview(){
         renderActivityLog();
       });
     });
+
+    const clearBtn = list.querySelector("#clearLogBtn");
+    if(clearBtn){
+      clearBtn.addEventListener("click", async () => {
+        if(!activityLog.length || !activityCol) return;
+        const count = activityLog.length;
+        if(!confirm(`Delete all ${count} activity log entr${count === 1 ? "y" : "ies"}? This cannot be undone.`)) return;
+        clearBtn.disabled = true;
+        clearBtn.textContent = "Clearing…";
+        try{
+          const batch = db.batch();
+          activityLog.forEach(a => batch.delete(activityCol.doc(a.id)));
+          await batch.commit();
+        } catch(err){
+          alert("Could not clear the activity log. Check your connection and try again.");
+          console.error(err);
+          clearBtn.disabled = false;
+          clearBtn.textContent = "Clear Log";
+        }
+      });
+    }
   }
 
   /* ================= MASTER RENDER ================= */
