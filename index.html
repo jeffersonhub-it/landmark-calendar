@@ -1409,58 +1409,6 @@ function renderViewOnlyModal(){
     console.error("Firestore sync error:", err);
   }
 
-  if(firebaseReady && usersCol && eventsCol) {
-    usersCol.onSnapshot(snap => {
-    users = snap.docs.map(d => d.data());
-    usersLoaded = true;
-    if(usersLoaded && eventsLoaded) markConnected();
-
-    // Real-time forced logout: if the account currently logged in on this
-    // device no longer exists in the roster, kick the user out immediately.
-    if(session){
-      const stillExists = users.some(u => u.username.toLowerCase() === session.username.toLowerCase());
-      if(!stillExists){
-        session = null;
-        saveSession(null);
-        // close any open modals so the "account removed" state is clean
-        document.querySelectorAll(".overlay.visible").forEach(o => o.classList.remove("visible"));
-        document.getElementById("loadingScreen").classList.remove("hidden");
-        alert("Your account has been removed by the Head Admin. You have been logged out.");
-      }
-    }
-
-    if(document.getElementById("rosterOverlay").classList.contains("visible")){
-      openRoster();
-    }
-    renderAll();
-}, markOffline);
-
-    eventsCol.onSnapshot(snap => {
-        events = snap.docs.map(d => d.data());
-        eventsLoaded = true;
-        if(usersLoaded && eventsLoaded) markConnected();
-        if(activeEvent){
-            const stillThere = events.find(e => e.id === activeEvent.id);
-            activeEvent = stillThere || null;
-        }
-        renderAll();
-    }, markOffline);
-
-    if(activityCol){
-      activityCol.onSnapshot(snap => {
-          activityLog = snap.docs.map(d => d.data()).sort((a,b) => (b.timestamp || "").localeCompare(a.timestamp || ""));
-          if(document.getElementById("activityLogOverlay").classList.contains("visible")){
-            renderActivityLog();
-          }
-      }, err => console.error("Activity log sync error:", err));
-    }
-} else {
-    console.warn("⚠️ Firebase not ready - running in offline mode");
-    users = [{ username: "admin", password: "admin123", role: "headadmin" }];
-    events = [];
-    renderAll();
-}
-
   /* ================= HEADER ================= */
   const headerRight = document.getElementById("headerRight");
 
@@ -2530,6 +2478,58 @@ const loadingAdminBtn = document.getElementById("loadingAdminBtn");
 if(loadingAdminBtn){
   loadingAdminBtn.addEventListener("click", openAccountModal); // loading screen stays until login succeeds
 }
+
+  if(firebaseReady && usersCol && eventsCol) {
+    usersCol.onSnapshot(snap => {
+    users = snap.docs.map(d => d.data());
+    usersLoaded = true;
+    if(usersLoaded && eventsLoaded) markConnected();
+
+    // Real-time forced logout: if the account currently logged in on this
+    // device no longer exists in the roster, kick the user out immediately.
+    if(session){
+      const stillExists = users.some(u => u.username.toLowerCase() === session.username.toLowerCase());
+      if(!stillExists){
+        session = null;
+        saveSession(null);
+        // close any open modals so the "account removed" state is clean
+        document.querySelectorAll(".overlay.visible").forEach(o => o.classList.remove("visible"));
+        document.getElementById("loadingScreen").classList.remove("hidden");
+        alert("Your account has been removed by the Head Admin. You have been logged out.");
+      }
+    }
+
+    if(document.getElementById("rosterOverlay").classList.contains("visible")){
+      openRoster();
+    }
+    renderAll();
+}, markOffline);
+
+    eventsCol.onSnapshot(snap => {
+        events = snap.docs.map(d => d.data());
+        eventsLoaded = true;
+        if(usersLoaded && eventsLoaded) markConnected();
+        if(activeEvent){
+            const stillThere = events.find(e => e.id === activeEvent.id);
+            activeEvent = stillThere || null;
+        }
+        renderAll();
+    }, markOffline);
+
+    if(activityCol){
+      activityCol.onSnapshot(snap => {
+          activityLog = snap.docs.map(d => d.data()).sort((a,b) => (b.timestamp || "").localeCompare(a.timestamp || ""));
+          if(document.getElementById("activityLogOverlay").classList.contains("visible")){
+            renderActivityLog();
+          }
+      }, err => console.error("Activity log sync error:", err));
+    }
+} else {
+    console.warn("⚠️ Firebase not ready - running in offline mode");
+    users = [{ username: "admin", password: "admin123", role: "headadmin" }];
+    events = [];
+}
+
 renderAll();
 
   // Kick off one-time setup (head admin + seed events), then Firestore listeners take over.
