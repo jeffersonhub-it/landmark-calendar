@@ -1710,8 +1710,8 @@ summaryCard.querySelector("#mYearNext").onclick = () => {
     renderMiniCalendar(card.querySelector("#miniCal"));
   }
 
-  const MIN_YEAR = today.getFullYear() - 1; // isang taon pabalik
-  const MAX_YEAR = 2027;                    // isang taon pasulong, hanggang 2027 lang
+ const MIN_YEAR = today.getFullYear(); // wala nang isang taon pabalik, kasalukuyang taon na lang
+const MAX_YEAR = 2027;
 
   function renderEdgePanel(){
     const content = document.getElementById("edgePanelContent");
