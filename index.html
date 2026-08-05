@@ -570,6 +570,37 @@ body {
   .cell.has-event:hover .event-chip{transform:translateX(1px);}
   .event-more{font-size:10px; opacity:.5; margin-top:3px; font-family:var(--mono);}
 
+  /* ---------- Messenger-style read/unread weight indicator ----------
+     No red/blue hues here on purpose: unread events are distinguished
+     purely by TEXT WEIGHT (bold) plus a small neutral unread dot,
+     exactly like unread vs. read conversations in Messenger. Once
+     "View Event" is used, the weight drops back to normal and the
+     dot disappears. Category colors (the chip background) are left
+     completely untouched. */
+  .cell.has-unviewed-event .daynum{
+    font-weight:800;
+  }
+  .cell-unread-dot{
+    position:absolute; top:6px; right:6px;
+    width:7px; height:7px; border-radius:50%;
+    background:var(--ink);
+    box-shadow:0 0 0 2px var(--paper-soft);
+  }
+  .event-chip.chip-unviewed{
+    font-weight:800;
+    display:flex; align-items:center; gap:5px;
+  }
+  .event-chip.chip-unviewed::before{
+    content:'';
+    width:6px; height:6px; border-radius:50%;
+    background:#fff;
+    box-shadow:0 0 0 1px rgba(0,0,0,0.18);
+    flex-shrink:0;
+  }
+  .event-chip.chip-viewed{
+    font-weight:400;
+  }
+
   .cat-sale{background:var(--red);}
   .cat-event{background:#5C1010;}
   .cat-b1t1{background:var(--emerald);}
@@ -1198,13 +1229,16 @@ body {
     border-radius: 50%;
     border: none;
     cursor: pointer;
-    background: #B3131A; /* red = unviewed */
-    box-shadow: 0 0 0 2px rgba(179,19,26,0.15);
-    transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+    background: var(--ink); /* solid/filled = unread, Messenger-style weight cue */
+    opacity: .88;
+    box-shadow: 0 0 0 2px rgba(26,14,14,0.15);
+    transition: transform .15s ease, background .15s ease, box-shadow .15s ease, opacity .15s ease, border-color .15s ease;
   }
   .nep-status-dot.viewed{
-    background: #1A4FB3; /* blue = viewed */
-    box-shadow: 0 0 0 2px rgba(26,79,179,0.15);
+    background: transparent;
+    border: 1.5px solid rgba(26,14,14,0.35);
+    opacity: .55;
+    box-shadow: none;
   }
   .nep-status-dot.active-dot{
     transform: scale(1.35);
@@ -2294,17 +2328,23 @@ content.querySelector("#edgeNextYear").onclick = () => {
       if(isToday) cell.classList.add("today");
       if(dayEvents.length) cell.classList.add("has-event");
 
-      /* ---- NEW: Red/Blue viewed-status corner badge on the date box ----
-         Red = at least one event on this date hasn't been viewed yet.
-         Blue = every event on this date has already been viewed.
-         Only shown while someone is logged in, since view-tracking is
-         per account; guests keep seeing the plain calendar as before. */
+      /* ---- NEW: Messenger-style unread indicator on the date box ----
+         No red/blue color coding — the calendar's original colors stay
+         untouched. Instead, when this date has at least one unviewed
+         event, the day number becomes BOLD and a small neutral unread
+         dot appears (same idea as an unread message dot in Messenger).
+         Once every event on that date has been viewed, the bold weight
+         and the dot both go away automatically. Only active while
+         someone is logged in, since view-tracking is per account. */
       if(dayEvents.length && typeof NewEventsFeature !== "undefined" && NewEventsFeature.isTrackingActive()){
         const anyUnviewed = dayEvents.some(ev => !NewEventsFeature.isEventViewed(ev.id));
-        const statusBadge = document.createElement("span");
-        statusBadge.className = "cell-viewed-badge " + (anyUnviewed ? "unviewed" : "viewed");
-        statusBadge.title = anyUnviewed ? "Has unviewed event(s)" : "All events viewed";
-        cell.appendChild(statusBadge);
+        if(anyUnviewed){
+          cell.classList.add("has-unviewed-event");
+          const unreadDot = document.createElement("span");
+          unreadDot.className = "cell-unread-dot";
+          unreadDot.title = "Has unviewed event(s)";
+          cell.appendChild(unreadDot);
+        }
       }
 
       const num = document.createElement("div");
@@ -2315,7 +2355,7 @@ content.querySelector("#edgeNextYear").onclick = () => {
       dayEvents.slice(0,2).forEach(ev => {
     const chip = document.createElement("div");
     chip.className = "event-chip";
-    /* ---- NEW: Red/Blue accent border on the event bar itself ---- */
+    /* ---- NEW: Messenger-style bold text + unread dot on the event bar itself ---- */
     if(typeof NewEventsFeature !== "undefined" && NewEventsFeature.isTrackingActive()){
         chip.classList.add(NewEventsFeature.isEventViewed(ev.id) ? "chip-viewed" : "chip-unviewed");
     }
@@ -3027,7 +3067,7 @@ const NewEventsFeature = (function () {
     return sessionQueue.filter(q => !q.viewedNow).length;
   }
 
-  /** Renders the row of Red(unviewed)/Blue(viewed) status dots. */
+  /** Renders the row of status dots: solid/filled = unread, hollow = read. */
   function renderStatusDots() {
     const wrap = document.getElementById("nepStatusDots");
     if (!wrap) return;
@@ -3056,7 +3096,11 @@ const NewEventsFeature = (function () {
 
     document.getElementById("nepCategoryBadge").textContent =
       (typeof CAT_LABEL !== "undefined" && CAT_LABEL[ev.category]) || ev.category || "Event";
-    document.getElementById("nepTitle").textContent = ev.title || "Untitled Event";
+    const nepTitleEl = document.getElementById("nepTitle");
+    nepTitleEl.textContent = ev.title || "Untitled Event";
+    // Messenger-style weight cue inside the modal too: bold while unread,
+    // normal weight the moment this card has been marked as viewed.
+    nepTitleEl.style.fontWeight = ev.viewedNow ? "400" : "800";
     document.getElementById("nepDate").textContent = dateLabel;
     document.getElementById("nepTime").textContent = ev.time || "Time TBA";
     document.getElementById("nepDesc").textContent = ev.description || "No description provided.";
@@ -3111,7 +3155,7 @@ const NewEventsFeature = (function () {
 
   /**
    * "Skip for Now" — closes the modal WITHOUT changing viewed status.
-   * The card stays Red/unviewed and the toolbar counter is unaffected,
+   * The card stays bold/unread and the toolbar counter is unaffected,
    * so it will show again next time the queue is opened.
    */
   function handleSkip() {
@@ -3126,10 +3170,11 @@ const NewEventsFeature = (function () {
   }
 
   /**
-   * "View Event" — marks THIS card as viewed (turns its status dot
-   * Blue), persists that to localStorage, refreshes the header's
-   * "New Events" counter badge live, closes the modal, and highlights
-   * the event on the calendar grid.
+   * "View Event" — marks THIS card as viewed (its status dot becomes
+   * hollow and its title/date drop from bold to normal weight),
+   * persists that to localStorage, refreshes the header's "New Events"
+   * counter badge live, closes the modal, and highlights the event on
+   * the calendar grid.
    */
   function handleView() {
     if (!sessionQueue.length || !session) return;
