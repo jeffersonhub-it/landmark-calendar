@@ -2294,6 +2294,19 @@ content.querySelector("#edgeNextYear").onclick = () => {
       if(isToday) cell.classList.add("today");
       if(dayEvents.length) cell.classList.add("has-event");
 
+      /* ---- NEW: Red/Blue viewed-status corner badge on the date box ----
+         Red = at least one event on this date hasn't been viewed yet.
+         Blue = every event on this date has already been viewed.
+         Only shown while someone is logged in, since view-tracking is
+         per account; guests keep seeing the plain calendar as before. */
+      if(dayEvents.length && typeof NewEventsFeature !== "undefined" && NewEventsFeature.isTrackingActive()){
+        const anyUnviewed = dayEvents.some(ev => !NewEventsFeature.isEventViewed(ev.id));
+        const statusBadge = document.createElement("span");
+        statusBadge.className = "cell-viewed-badge " + (anyUnviewed ? "unviewed" : "viewed");
+        statusBadge.title = anyUnviewed ? "Has unviewed event(s)" : "All events viewed";
+        cell.appendChild(statusBadge);
+      }
+
       const num = document.createElement("div");
       num.className = "daynum";
       num.textContent = dayNum;
@@ -2302,6 +2315,10 @@ content.querySelector("#edgeNextYear").onclick = () => {
       dayEvents.slice(0,2).forEach(ev => {
     const chip = document.createElement("div");
     chip.className = "event-chip";
+    /* ---- NEW: Red/Blue accent border on the event bar itself ---- */
+    if(typeof NewEventsFeature !== "undefined" && NewEventsFeature.isTrackingActive()){
+        chip.classList.add(NewEventsFeature.isEventViewed(ev.id) ? "chip-viewed" : "chip-unviewed");
+    }
     chip.style.background = catColor(ev.category);
     chip.textContent = ev.title;
     cell.appendChild(chip);
@@ -2941,6 +2958,25 @@ const NewEventsFeature = (function () {
     }
   }
 
+  /**
+   * Whether the current logged-in user has already viewed this specific
+   * event. Used by the calendar grid (and mini calendar) to color each
+   * date's event bar/indicator Red (unviewed) or Blue (viewed). When
+   * nobody is logged in there is no per-account tracking, so this
+   * always reports "viewed" (no red/blue coloring applied) so guests
+   * still see the normal category-colored calendar.
+   */
+  function isEventViewed(id) {
+    if (!session) return true;
+    return getViewedIds(session.username).includes(id);
+  }
+
+  /** Whether calendar-date viewed/unviewed coloring should be active
+   *  at all right now (i.e. someone is logged in). */
+  function isTrackingActive() {
+    return !!session;
+  }
+
   // Snapshot of "new" events for this popup session, each tracked with a
   // live viewed status so the stacked cards + red/blue dots stay in sync
   // without needing to reopen the popup.
@@ -3228,7 +3264,9 @@ const NewEventsFeature = (function () {
     checkForNewEventsAndPopup,
     computeUnviewed,
     getUnviewedCount,
-    showNextInQueue
+    showNextInQueue,
+    isEventViewed,
+    isTrackingActive
   };
 })();
 
