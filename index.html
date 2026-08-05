@@ -933,6 +933,224 @@ body {
     text-align:center; font-family:var(--mono); font-size:10.5px; letter-spacing:1px;
     opacity:.38; padding:10px 0 40px;
   }
+
+  /* ============================================
+     NEW EVENTS FEATURE — CSS
+     Palette: Burgundy #8B0000, White #FFFFFF, Off-white #FAF7F2
+     ============================================ */
+
+  /* ---------- Toolbar "New Events" button ---------- */
+  .new-events-btn{
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1.5px solid #8B0000;
+    background: #FAF7F2;
+    color: #8B0000;
+    font-family: var(--body, sans-serif);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: .2px;
+    cursor: pointer;
+    transition: background .18s ease, color .18s ease, transform .18s ease, box-shadow .18s ease;
+  }
+  .new-events-btn svg{ width: 16px; height: 16px; flex-shrink: 0; }
+  .new-events-btn:hover{
+    background: #8B0000;
+    color: #FFFFFF;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px -6px rgba(139,0,0,0.45);
+  }
+  .new-events-btn:active{ transform: translateY(0); }
+
+  .new-events-badge{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #8B0000;
+    color: #FFFFFF;
+    font-family: var(--mono, monospace);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    animation: nepBadgePop .3s ease;
+  }
+  .new-events-btn:hover .new-events-badge{
+    background: #FFFFFF;
+    color: #8B0000;
+  }
+  @keyframes nepBadgePop{
+    0%{ transform: scale(0.4); opacity: 0; }
+    60%{ transform: scale(1.15); opacity: 1; }
+    100%{ transform: scale(1); }
+  }
+
+  /* Hide badge completely when count hits zero */
+  .new-events-badge.is-zero{ display: none; }
+
+  @media (max-width: 640px){
+    .new-events-btn span:not(.new-events-badge){ display: none; } /* icon + badge only on small screens */
+    .new-events-btn{ padding: 8px 10px; }
+  }
+
+  /* ---------- Login Auto Pop-up Modal ---------- */
+  .new-event-popup{
+    position: relative;
+    width: min(440px, 100%);
+    max-height: 88vh;
+    overflow: auto;
+    background: #FFFFFF;
+    border-radius: 20px;
+    box-shadow: 0 24px 60px -20px rgba(139,0,0,0.35), 0 4px 12px -4px rgba(0,0,0,0.12);
+    animation: nepPopIn .3s cubic-bezier(.22,1,.36,1);
+  }
+  @keyframes nepPopIn{
+    from{ opacity: 0; transform: scale(.94) translateY(14px); }
+    to{ opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .new-event-popup .modal-close{
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 5;
+    background: rgba(255,255,255,0.85);
+    border: 1.5px solid #FAF7F2;
+    color: #8B0000;
+  }
+  .new-event-popup .modal-close:hover{
+    background: #8B0000;
+    color: #FFFFFF;
+    border-color: #8B0000;
+  }
+
+  /* Poster / wallpaper area at the top of the modal */
+  .nep-poster{
+    height: 190px;
+    background: linear-gradient(160deg, #8B0000 0%, #5a0000 100%);
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: flex-start;
+    padding: 18px;
+    position: relative;
+  }
+  .nep-poster::after{
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.35) 100%);
+  }
+  .nep-badge{
+    position: relative;
+    z-index: 1;
+    display: inline-block;
+    padding: 5px 14px;
+    border-radius: 999px;
+    background: #FFFFFF;
+    color: #8B0000;
+    font-family: var(--mono, monospace);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  /* Body / text content */
+  .nep-body{
+    padding: 22px 24px 24px;
+    background: #FAF7F2;
+  }
+  .nep-queue-note{
+    font-family: var(--mono, monospace);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #8B0000;
+    opacity: .7;
+    margin-bottom: 6px;
+    min-height: 14px;
+  }
+  .nep-title{
+    margin: 0 0 12px;
+    font-size: 22px;
+    font-weight: 800;
+    color: #3A0000;
+    line-height: 1.2;
+  }
+  .nep-meta{
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .nep-meta-item{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #5a0000;
+  }
+  .nep-meta-item svg{ width: 15px; height: 15px; opacity: .8; flex-shrink: 0; }
+
+  .nep-desc{
+    font-size: 14px;
+    line-height: 1.6;
+    color: #4a3a3a;
+    margin: 0 0 20px;
+    border-top: 1px solid rgba(139,0,0,0.12);
+    padding-top: 14px;
+  }
+
+  .nep-actions{
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+  .nep-skip-btn{
+    background: #FFFFFF;
+    border: 1.5px solid #d8cfc7;
+    color: #6b5b5b;
+  }
+  .nep-skip-btn:hover{
+    background: #f0ebe5;
+    border-color: #b9a99a;
+  }
+  .nep-view-btn.btn.primary{
+    background: #8B0000;
+    border-color: #8B0000;
+    color: #FFFFFF;
+  }
+  .nep-view-btn.btn.primary:hover{
+    background: #a30000;
+    box-shadow: 0 8px 20px -8px rgba(139,0,0,0.5);
+  }
+
+  @media (max-width: 480px){
+    .nep-actions{ flex-direction: column-reverse; }
+    .nep-actions .btn{ width: 100%; text-align: center; }
+  }
+
+  /* ---------- Calendar cell highlight (after "View Event") ---------- */
+  .cell.event-highlight-pulse{
+    position: relative;
+    outline: 2.5px solid #8B0000;
+    outline-offset: -2px;
+    z-index: 3;
+    animation: nepCellPulse 1.6s ease-in-out 3;
+  }
+  @keyframes nepCellPulse{
+    0%, 100%{ box-shadow: 0 0 0 0 rgba(139,0,0,0.0); background: rgba(139,0,0,0.0); }
+    50%{ box-shadow: 0 0 0 6px rgba(139,0,0,0.12); background: rgba(139,0,0,0.10); }
+  }
 #loadingScreen{
   position:fixed; inset:0; z-index:9999;
   background:#B3131A;
@@ -1014,6 +1232,43 @@ body {
     <button class="modal-close" data-close="choiceOverlay">&times;</button>
     <h3 id="choiceDateLabel">Events</h3>
     <div id="choiceList"></div>
+  </div>
+</div>
+
+<!-- ============================================
+     NEW EVENTS FEATURE — Login Auto Pop-up Modal
+     Shown automatically right after login (and again
+     whenever the "New Events" toolbar button is clicked)
+     for any event the current user hasn't viewed yet.
+     ============================================ -->
+<div class="overlay" id="newEventPopupOverlay">
+  <div class="new-event-popup">
+    <button class="modal-close" id="newEventPopupCloseX" aria-label="Close">&times;</button>
+
+    <div class="nep-poster" id="nepPoster">
+      <span class="nep-badge" id="nepCategoryBadge">Event</span>
+    </div>
+
+    <div class="nep-body">
+      <div class="nep-queue-note" id="nepQueueNote"></div>
+      <h3 class="nep-title" id="nepTitle">Event Title</h3>
+      <div class="nep-meta">
+        <span class="nep-meta-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"></rect><path d="M16 2.5v4M8 2.5v4M3 9.5h18"></path></svg>
+          <span id="nepDate">--</span>
+        </span>
+        <span class="nep-meta-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 3"></path></svg>
+          <span id="nepTime">--</span>
+        </span>
+      </div>
+      <p class="nep-desc" id="nepDesc">Event description goes here.</p>
+
+      <div class="nep-actions">
+        <button type="button" class="btn nep-skip-btn" id="nepSkipBtn">Skip for Now</button>
+        <button type="button" class="btn primary nep-view-btn" id="nepViewBtn">View Event</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1152,6 +1407,7 @@ body {
   </svg>`;
   const BACK_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>`;
   const CAL_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"></rect><path d="M16 2.5v4M8 2.5v4M3 9.5h18"></path></svg>`;
+  const BELL_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>`;
 
   /* ================= DATA LAYER (Firestore, real-time synced) ================= */
   const LS_SESSION = "meridian_session"; // session stays LOCAL per device/browser on purpose
@@ -1212,6 +1468,12 @@ function completeLogin(user){
   resetIdleTimer();
   logActivity("login", `Logged in as ${roleLabel(user.role)}`);
   renderAll();
+
+  // NEW EVENTS FEATURE: recompute the unviewed queue for this account
+  // and, if there are any new/unseen events, auto-pop the modal.
+  if(typeof NewEventsFeature !== "undefined"){
+    NewEventsFeature.checkForNewEventsAndPopup();
+  }
 }
 
 function openViewOnlyModal(){
@@ -1437,7 +1699,28 @@ countPill.innerHTML = `${CAL_ICON}<span>${events.length}</span>`;
 countPill.onclick = openYearOverview;
 headerRight.appendChild(countPill);
 
-   
+    /* ---- NEW EVENTS FEATURE: toolbar button + counter badge ----
+       Only shown while logged in, since "viewed" tracking is per
+       account. The badge count is recomputed fresh on every render
+       so it always reflects the live unviewed queue, and it hides
+       itself automatically once the count reaches zero. */
+    if(session && typeof NewEventsFeature !== "undefined"){
+      NewEventsFeature.computeUnviewed();
+      const unviewedCount = NewEventsFeature.getUnviewedCount();
+
+      const newEventsBtn = document.createElement("button");
+      newEventsBtn.type = "button";
+      newEventsBtn.id = "newEventsBtn";
+      newEventsBtn.className = "new-events-btn";
+      newEventsBtn.title = "See new events";
+      newEventsBtn.innerHTML = `${BELL_ICON}<span>New Events</span><span class="new-events-badge${unviewedCount === 0 ? " is-zero" : ""}" id="newEventsBadge">${unviewedCount}</span>`;
+      newEventsBtn.onclick = () => {
+        NewEventsFeature.computeUnviewed();
+        NewEventsFeature.showNextInQueue();
+      };
+      headerRight.appendChild(newEventsBtn);
+    }
+
       const gear = document.createElement("button");
       gear.className = "icon-btn" + (session ? " active-dot" : "");
       gear.title = session ? "Account & tools" : "Store settings";
@@ -2529,6 +2812,224 @@ if(loadingAdminBtn){
     users = [{ username: "admin", password: "admin123", role: "headadmin" }];
     events = [];
 }
+
+/* ============================================================
+   NEW EVENTS FEATURE — JavaScript module
+   - Tracks which events each logged-in account has already
+     "viewed", per-browser, using localStorage.
+   - Powers the "New Events (n)" toolbar button + counter badge.
+   - Powers the login auto-popup (poster, title, date, description,
+     "Skip for Now" / "View Event").
+   Relies on this file's existing globals: session, events,
+   viewYear, viewMonth, monthNavDir, activeEvent, renderAll,
+   catColor, escapeHtml, CAT_LABEL — all already declared above.
+   ============================================================ */
+const NewEventsFeature = (function () {
+  "use strict";
+
+  // ---- localStorage helpers (tracking is PER LOGGED-IN USER) ----
+  function storageKey(username) {
+    return `landmark_viewed_events_${(username || "guest").toLowerCase()}`;
+  }
+  function baselineKey(username) {
+    return `landmark_viewed_baseline_${(username || "guest").toLowerCase()}`;
+  }
+  function getViewedIds(username) {
+    try {
+      return JSON.parse(localStorage.getItem(storageKey(username)) || "[]");
+    } catch (e) {
+      return [];
+    }
+  }
+  function saveViewedIds(username, idsArray) {
+    localStorage.setItem(storageKey(username), JSON.stringify(idsArray));
+  }
+  function markIdAsViewed(username, id) {
+    const ids = getViewedIds(username);
+    if (!ids.includes(id)) {
+      ids.push(id);
+      saveViewedIds(username, ids);
+    }
+  }
+
+  // The queue of event objects the current user hasn't seen yet
+  let unviewedQueue = [];
+  let currentPopupEvent = null;
+
+  /**
+   * Recomputes which events are "new/unviewed" for the current session.
+   * On a user's very first-ever login, a baseline is set (every event
+   * currently on the calendar is marked as already viewed) so a brand
+   * new account isn't flooded with old events — only events added
+   * AFTER that baseline will ever count as "new".
+   */
+  function computeUnviewed() {
+    if (!session) {
+      unviewedQueue = [];
+      return;
+    }
+    const username = session.username;
+
+    if (!localStorage.getItem(baselineKey(username))) {
+      saveViewedIds(username, events.map(ev => ev.id));
+      localStorage.setItem(baselineKey(username), "1");
+      unviewedQueue = [];
+      return;
+    }
+
+    const viewedIds = getViewedIds(username);
+    unviewedQueue = events
+      .filter(ev => !viewedIds.includes(ev.id))
+      .sort((a, b) => a.date.localeCompare(b.date)); // soonest first
+  }
+
+  function getUnviewedCount() {
+    return unviewedQueue.length;
+  }
+
+  /** Fills the modal fields with a given event's info and shows it. */
+  function openPopupFor(ev) {
+    if (!ev) return;
+    currentPopupEvent = ev;
+
+    const d = new Date(ev.date + "T00:00:00");
+    const dateLabel = d.toLocaleDateString(undefined, {
+      weekday: "long", month: "long", day: "numeric", year: "numeric"
+    });
+
+    document.getElementById("nepCategoryBadge").textContent =
+      (typeof CAT_LABEL !== "undefined" && CAT_LABEL[ev.category]) || ev.category || "Event";
+    document.getElementById("nepTitle").textContent = ev.title || "Untitled Event";
+    document.getElementById("nepDate").textContent = dateLabel;
+    document.getElementById("nepTime").textContent = ev.time || "Time TBA";
+    document.getElementById("nepDesc").textContent = ev.description || "No description provided.";
+
+    // Poster / wallpaper: gradient built from the event's category color
+    const poster = document.getElementById("nepPoster");
+    const color = (typeof catColor === "function") ? catColor(ev.category) : "#8B0000";
+    poster.style.background = `linear-gradient(160deg, ${color} 0%, #3a0000 100%)`;
+
+    // Queue indicator, e.g. "New Event 1 of 3"
+    const idx = unviewedQueue.findIndex(q => q.id === ev.id);
+    const note = document.getElementById("nepQueueNote");
+    note.textContent = unviewedQueue.length > 1
+      ? `New Event ${idx >= 0 ? idx + 1 : 1} of ${unviewedQueue.length}`
+      : "New Event";
+
+    document.getElementById("newEventPopupOverlay").classList.add("visible");
+  }
+
+  /** Opens the modal for the first item in the unviewed queue, if any. */
+  function showNextInQueue() {
+    if (unviewedQueue.length === 0) return;
+    openPopupFor(unviewedQueue[0]);
+  }
+
+  function closePopup() {
+    document.getElementById("newEventPopupOverlay").classList.remove("visible");
+    currentPopupEvent = null;
+  }
+
+  /**
+   * "Skip for Now" — closes the modal WITHOUT decreasing the counter
+   * or marking the event as viewed. The event stays in the queue, so
+   * it will show again next time the toolbar button is clicked.
+   */
+  function handleSkip() {
+    closePopup();
+    // Intentionally: no change to unviewedQueue / badge count.
+  }
+
+  /**
+   * "View Event" — marks the event as viewed (removes it from the
+   * queue), closes the modal, and highlights the event on the
+   * calendar grid. The toolbar badge updates automatically because
+   * renderHeader() recomputes the unviewed count on every render.
+   */
+  function handleView() {
+    if (!currentPopupEvent || !session) return;
+    const ev = currentPopupEvent;
+
+    markIdAsViewed(session.username, ev.id);
+    unviewedQueue = unviewedQueue.filter(q => q.id !== ev.id);
+
+    closePopup();
+    highlightEventOnCalendar(ev);
+  }
+
+  /**
+   * Jumps the calendar grid to the event's month/year and applies a
+   * pulsing highlight to its cell. Uses this file's existing globals
+   * (viewYear, viewMonth, activeEvent, monthNavDir, renderAll) so the
+   * grid re-renders through the normal app flow — which also refreshes
+   * the "New Events" badge count automatically.
+   */
+  function highlightEventOnCalendar(ev) {
+    const d = new Date(ev.date + "T00:00:00");
+
+    if (typeof activeEvent !== "undefined") activeEvent = null;
+    viewYear = d.getFullYear();
+    viewMonth = d.getMonth();
+    if (typeof monthNavDir !== "undefined") monthNavDir = 0;
+    renderAll();
+
+    // After the grid re-renders, find the matching day cell and pulse it.
+    requestAnimationFrame(() => {
+      const grid = document.getElementById("grid");
+      if (!grid) return;
+      const targetDay = String(d.getDate());
+      const cells = grid.querySelectorAll(".cell:not(.outside)");
+      cells.forEach(cell => {
+        const numEl = cell.querySelector(".daynum");
+        if (numEl && numEl.textContent.trim() === targetDay) {
+          cell.classList.add("event-highlight-pulse");
+          cell.scrollIntoView({ behavior: "smooth", block: "center" });
+          setTimeout(() => cell.classList.remove("event-highlight-pulse"), 5000);
+        }
+      });
+    });
+  }
+
+  /**
+   * Call this once right after a successful login. Recomputes the
+   * queue and, if there's anything new to show, auto-opens the modal
+   * for the newest unseen event.
+   */
+  function checkForNewEventsAndPopup() {
+    computeUnviewed();
+    if (unviewedQueue.length > 0) {
+      showNextInQueue();
+    }
+  }
+
+  /** Wires up the static modal buttons. Called once, on page load. */
+  function bindUI() {
+    const skipBtn = document.getElementById("nepSkipBtn");
+    const viewBtn = document.getElementById("nepViewBtn");
+    const closeX = document.getElementById("newEventPopupCloseX");
+    const overlay = document.getElementById("newEventPopupOverlay");
+
+    if (skipBtn) skipBtn.addEventListener("click", handleSkip);
+    if (viewBtn) viewBtn.addEventListener("click", handleView);
+    if (closeX) closeX.addEventListener("click", handleSkip); // X = same as Skip
+    if (overlay) {
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) handleSkip();
+      });
+    }
+  }
+
+  // Public API
+  return {
+    bindUI,
+    checkForNewEventsAndPopup,
+    computeUnviewed,
+    getUnviewedCount,
+    showNextInQueue
+  };
+})();
+
+NewEventsFeature.bindUI(); // wire up the popup's Skip / View / Close buttons once
 
 renderAll();
 
