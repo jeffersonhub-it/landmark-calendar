@@ -1139,6 +1139,77 @@ body {
     .nep-actions .btn{ width: 100%; text-align: center; }
   }
 
+  /* ---------- NEW: Stacked-card popup + swipe + viewed/unviewed indicators ---------- */
+  .nep-stack-wrap{
+    position: relative;
+    width: min(440px, 100%);
+    margin: 0 auto;
+    touch-action: pan-y;
+  }
+  .nep-card-layer{
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    background: #FFFFFF;
+    box-shadow: 0 14px 30px -14px rgba(139,0,0,0.30);
+    pointer-events: none;
+  }
+  .nep-card-layer.layer-1{ transform: translateY(10px) rotate(-3deg) scale(0.97); z-index: 1; opacity: .9; }
+  .nep-card-layer.layer-2{ transform: translateY(18px) rotate(3deg) scale(0.94); z-index: 0; opacity: .7; }
+
+  .new-event-popup{
+    position: relative;
+    z-index: 2;
+    transition: transform .25s ease, opacity .25s ease;
+  }
+  .new-event-popup.swiping-left{ transform: translateX(-40px) rotate(-2deg); opacity: .5; }
+  .new-event-popup.swiping-right{ transform: translateX(40px) rotate(2deg); opacity: .5; }
+
+  .nep-nav-btn{
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    z-index: 6;
+    transition: background .15s ease, transform .15s ease;
+  }
+  .nep-nav-btn:hover{ background: #8B0000; }
+  .nep-nav-btn:disabled{ opacity: .25; cursor: not-allowed; }
+  .nep-nav-btn.prev{ left: -6px; }
+  .nep-nav-btn.next{ right: -6px; }
+  .nep-nav-btn svg{ width: 18px; height: 18px; }
+
+  .nep-status-dots{
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 10px 24px 0;
+    background: #FAF7F2;
+  }
+  .nep-status-dot{
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: #B3131A; /* red = unviewed */
+    box-shadow: 0 0 0 2px rgba(179,19,26,0.15);
+    transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+  }
+  .nep-status-dot.viewed{
+    background: #1A4FB3; /* blue = viewed */
+    box-shadow: 0 0 0 2px rgba(26,79,179,0.15);
+  }
+  .nep-status-dot.active-dot{
+    transform: scale(1.35);
+  }
+
   /* ---------- Calendar cell highlight (after "View Event") ---------- */
   .cell.event-highlight-pulse{
     position: relative;
@@ -1237,37 +1308,53 @@ body {
 
 <!-- ============================================
      NEW EVENTS FEATURE — Login Auto Pop-up Modal
+     Stacked-card version with swipe/arrow navigation
+     and red(unviewed)/blue(viewed) status dots.
      Shown automatically right after login (and again
      whenever the "New Events" toolbar button is clicked)
      for any event the current user hasn't viewed yet.
      ============================================ -->
 <div class="overlay" id="newEventPopupOverlay">
-  <div class="new-event-popup">
-    <button class="modal-close" id="newEventPopupCloseX" aria-label="Close">&times;</button>
+  <div class="nep-stack-wrap" id="nepStackWrap">
+    <div class="nep-card-layer layer-2"></div>
+    <div class="nep-card-layer layer-1"></div>
 
-    <div class="nep-poster" id="nepPoster">
-      <span class="nep-badge" id="nepCategoryBadge">Event</span>
-    </div>
+    <button type="button" class="nep-nav-btn prev" id="nepPrevBtn" aria-label="Previous event">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
+    </button>
+    <button type="button" class="nep-nav-btn next" id="nepNextBtn" aria-label="Next event">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
+    </button>
 
-    <div class="nep-body">
-      <div class="nep-queue-note" id="nepQueueNote"></div>
-      <h3 class="nep-title" id="nepTitle">Event Title</h3>
-      <div class="nep-meta">
-        <span class="nep-meta-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"></rect><path d="M16 2.5v4M8 2.5v4M3 9.5h18"></path></svg>
-          <span id="nepDate">--</span>
-        </span>
-        <span class="nep-meta-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 3"></path></svg>
-          <span id="nepTime">--</span>
-        </span>
+    <div class="new-event-popup" id="nepCard">
+      <button class="modal-close" id="newEventPopupCloseX" aria-label="Close">&times;</button>
+
+      <div class="nep-poster" id="nepPoster">
+        <span class="nep-badge" id="nepCategoryBadge">Event</span>
       </div>
-      <p class="nep-desc" id="nepDesc">Event description goes here.</p>
 
-      <div class="nep-actions">
-        <button type="button" class="btn nep-skip-btn" id="nepSkipBtn">Skip for Now</button>
-        <button type="button" class="btn primary nep-view-btn" id="nepViewBtn">View Event</button>
+      <div class="nep-body">
+        <div class="nep-queue-note" id="nepQueueNote"></div>
+        <h3 class="nep-title" id="nepTitle">Event Title</h3>
+        <div class="nep-meta">
+          <span class="nep-meta-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"></rect><path d="M16 2.5v4M8 2.5v4M3 9.5h18"></path></svg>
+            <span id="nepDate">--</span>
+          </span>
+          <span class="nep-meta-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 3"></path></svg>
+            <span id="nepTime">--</span>
+          </span>
+        </div>
+        <p class="nep-desc" id="nepDesc">Event description goes here.</p>
+
+        <div class="nep-actions">
+          <button type="button" class="btn nep-skip-btn" id="nepSkipBtn">Skip for Now</button>
+          <button type="button" class="btn primary nep-view-btn" id="nepViewBtn">View Event</button>
+        </div>
       </div>
+
+      <div class="nep-status-dots" id="nepStatusDots"></div>
     </div>
   </div>
 </div>
@@ -2818,11 +2905,13 @@ if(loadingAdminBtn){
    - Tracks which events each logged-in account has already
      "viewed", per-browser, using localStorage.
    - Powers the "New Events (n)" toolbar button + counter badge.
-   - Powers the login auto-popup (poster, title, date, description,
-     "Skip for Now" / "View Event").
+   - Powers the login auto-popup with a stacked-card layout,
+     swipe/arrow navigation, and Red (unviewed) / Blue (viewed)
+     status dots.
    Relies on this file's existing globals: session, events,
    viewYear, viewMonth, monthNavDir, activeEvent, renderAll,
-   catColor, escapeHtml, CAT_LABEL — all already declared above.
+   catColor, escapeHtml, CAT_LABEL, renderHeader — all already
+   declared above.
    ============================================================ */
 const NewEventsFeature = (function () {
   "use strict";
@@ -2852,9 +2941,11 @@ const NewEventsFeature = (function () {
     }
   }
 
-  // The queue of event objects the current user hasn't seen yet
-  let unviewedQueue = [];
-  let currentPopupEvent = null;
+  // Snapshot of "new" events for this popup session, each tracked with a
+  // live viewed status so the stacked cards + red/blue dots stay in sync
+  // without needing to reopen the popup.
+  let sessionQueue = [];   // [{ id, ...eventFields, viewedNow: bool }]
+  let queueIndex = 0;
 
   /**
    * Recomputes which events are "new/unviewed" for the current session.
@@ -2865,7 +2956,7 @@ const NewEventsFeature = (function () {
    */
   function computeUnviewed() {
     if (!session) {
-      unviewedQueue = [];
+      sessionQueue = [];
       return;
     }
     const username = session.username;
@@ -2873,24 +2964,54 @@ const NewEventsFeature = (function () {
     if (!localStorage.getItem(baselineKey(username))) {
       saveViewedIds(username, events.map(ev => ev.id));
       localStorage.setItem(baselineKey(username), "1");
-      unviewedQueue = [];
+      sessionQueue = sessionQueue.filter(q => events.some(ev => ev.id === q.id));
       return;
     }
 
     const viewedIds = getViewedIds(username);
-    unviewedQueue = events
-      .filter(ev => !viewedIds.includes(ev.id))
-      .sort((a, b) => a.date.localeCompare(b.date)); // soonest first
+    // Merge: keep existing session items (preserving their live viewed
+    // status + order), then append any freshly-new events not already
+    // tracked in the session queue.
+    const existingIds = new Set(sessionQueue.map(q => q.id));
+    const fresh = events
+      .filter(ev => !viewedIds.includes(ev.id) && !existingIds.has(ev.id))
+      .sort((a, b) => a.date.localeCompare(b.date)) // soonest first
+      .map(ev => Object.assign({}, ev, { viewedNow: false }));
+
+    sessionQueue = sessionQueue
+      .filter(q => events.some(ev => ev.id === q.id)) // drop deleted events
+      .concat(fresh);
+
+    if (queueIndex >= sessionQueue.length) {
+      queueIndex = Math.max(0, sessionQueue.length - 1);
+    }
   }
 
   function getUnviewedCount() {
-    return unviewedQueue.length;
+    return sessionQueue.filter(q => !q.viewedNow).length;
   }
 
-  /** Fills the modal fields with a given event's info and shows it. */
-  function openPopupFor(ev) {
-    if (!ev) return;
-    currentPopupEvent = ev;
+  /** Renders the row of Red(unviewed)/Blue(viewed) status dots. */
+  function renderStatusDots() {
+    const wrap = document.getElementById("nepStatusDots");
+    if (!wrap) return;
+    wrap.innerHTML = sessionQueue.map((q, i) =>
+      `<button type="button" class="nep-status-dot${q.viewedNow ? " viewed" : ""}${i === queueIndex ? " active-dot" : ""}" data-idx="${i}" aria-label="Go to event ${i + 1}"></button>`
+    ).join("");
+    wrap.querySelectorAll(".nep-status-dot").forEach(dot => {
+      dot.addEventListener("click", () => {
+        queueIndex = parseInt(dot.dataset.idx, 10);
+        renderCurrentCard();
+      });
+    });
+  }
+
+  /** Fills the modal fields with the card currently at queueIndex and
+   *  updates the stacked-card layer visibility to match how many
+   *  cards remain after it. */
+  function renderCurrentCard() {
+    if (!sessionQueue.length) return;
+    const ev = sessionQueue[queueIndex];
 
     const d = new Date(ev.date + "T00:00:00");
     const dateLabel = d.toLocaleDateString(undefined, {
@@ -2910,48 +3031,79 @@ const NewEventsFeature = (function () {
     poster.style.background = `linear-gradient(160deg, ${color} 0%, #3a0000 100%)`;
 
     // Queue indicator, e.g. "New Event 1 of 3"
-    const idx = unviewedQueue.findIndex(q => q.id === ev.id);
     const note = document.getElementById("nepQueueNote");
-    note.textContent = unviewedQueue.length > 1
-      ? `New Event ${idx >= 0 ? idx + 1 : 1} of ${unviewedQueue.length}`
+    note.textContent = sessionQueue.length > 1
+      ? `New Event ${queueIndex + 1} of ${sessionQueue.length}`
       : "New Event";
 
-    document.getElementById("newEventPopupOverlay").classList.add("visible");
+    const prevBtn = document.getElementById("nepPrevBtn");
+    const nextBtn = document.getElementById("nepNextBtn");
+    if (prevBtn) prevBtn.disabled = queueIndex <= 0;
+    if (nextBtn) nextBtn.disabled = queueIndex >= sessionQueue.length - 1;
+
+    // Stacked-cards effect: show one paper layer behind for each
+    // remaining unseen card in the queue (max two layers for depth).
+    const stackWrap = document.getElementById("nepStackWrap");
+    if (stackWrap) {
+      const remaining = sessionQueue.length - queueIndex - 1;
+      const layer1 = stackWrap.querySelector(".layer-1");
+      const layer2 = stackWrap.querySelector(".layer-2");
+      if (layer1) layer1.style.display = remaining >= 1 ? "block" : "none";
+      if (layer2) layer2.style.display = remaining >= 2 ? "block" : "none";
+    }
+
+    renderStatusDots();
+
+    const viewBtn = document.getElementById("nepViewBtn");
+    if (viewBtn) viewBtn.textContent = ev.viewedNow ? "Viewed \u2713" : "View Event";
   }
 
-  /** Opens the modal for the first item in the unviewed queue, if any. */
+  /** Opens the modal at the first card in the queue, if any. */
   function showNextInQueue() {
-    if (unviewedQueue.length === 0) return;
-    openPopupFor(unviewedQueue[0]);
+    if (unviewedOrSessionEmpty()) return;
+    queueIndex = 0;
+    document.getElementById("newEventPopupOverlay").classList.add("visible");
+    renderCurrentCard();
+  }
+  function unviewedOrSessionEmpty() {
+    return sessionQueue.length === 0;
   }
 
   function closePopup() {
     document.getElementById("newEventPopupOverlay").classList.remove("visible");
-    currentPopupEvent = null;
   }
 
   /**
-   * "Skip for Now" — closes the modal WITHOUT decreasing the counter
-   * or marking the event as viewed. The event stays in the queue, so
-   * it will show again next time the toolbar button is clicked.
+   * "Skip for Now" — closes the modal WITHOUT changing viewed status.
+   * The card stays Red/unviewed and the toolbar counter is unaffected,
+   * so it will show again next time the queue is opened.
    */
   function handleSkip() {
     closePopup();
-    // Intentionally: no change to unviewedQueue / badge count.
+  }
+
+  function goPrev() {
+    if (queueIndex > 0) { queueIndex--; renderCurrentCard(); }
+  }
+  function goNext() {
+    if (queueIndex < sessionQueue.length - 1) { queueIndex++; renderCurrentCard(); }
   }
 
   /**
-   * "View Event" — marks the event as viewed (removes it from the
-   * queue), closes the modal, and highlights the event on the
-   * calendar grid. The toolbar badge updates automatically because
-   * renderHeader() recomputes the unviewed count on every render.
+   * "View Event" — marks THIS card as viewed (turns its status dot
+   * Blue), persists that to localStorage, refreshes the header's
+   * "New Events" counter badge live, closes the modal, and highlights
+   * the event on the calendar grid.
    */
   function handleView() {
-    if (!currentPopupEvent || !session) return;
-    const ev = currentPopupEvent;
+    if (!sessionQueue.length || !session) return;
+    const ev = sessionQueue[queueIndex];
 
     markIdAsViewed(session.username, ev.id);
-    unviewedQueue = unviewedQueue.filter(q => q.id !== ev.id);
+    ev.viewedNow = true;
+
+    renderStatusDots();
+    if (typeof renderHeader === "function") renderHeader(); // live badge update
 
     closePopup();
     highlightEventOnCalendar(ev);
@@ -2961,8 +3113,7 @@ const NewEventsFeature = (function () {
    * Jumps the calendar grid to the event's month/year and applies a
    * pulsing highlight to its cell. Uses this file's existing globals
    * (viewYear, viewMonth, activeEvent, monthNavDir, renderAll) so the
-   * grid re-renders through the normal app flow — which also refreshes
-   * the "New Events" badge count automatically.
+   * grid re-renders through the normal app flow.
    */
   function highlightEventOnCalendar(ev) {
     const d = new Date(ev.date + "T00:00:00");
@@ -2973,7 +3124,6 @@ const NewEventsFeature = (function () {
     if (typeof monthNavDir !== "undefined") monthNavDir = 0;
     renderAll();
 
-    // After the grid re-renders, find the matching day cell and pulse it.
     requestAnimationFrame(() => {
       const grid = document.getElementById("grid");
       if (!grid) return;
@@ -2992,31 +3142,84 @@ const NewEventsFeature = (function () {
 
   /**
    * Call this once right after a successful login. Recomputes the
-   * queue and, if there's anything new to show, auto-opens the modal
-   * for the newest unseen event.
+   * queue and, if there's anything to show, auto-opens the modal.
    */
   function checkForNewEventsAndPopup() {
     computeUnviewed();
-    if (unviewedQueue.length > 0) {
+    if (sessionQueue.length > 0) {
       showNextInQueue();
     }
   }
 
-  /** Wires up the static modal buttons. Called once, on page load. */
+  /** Wires up the modal's buttons, swipe gestures, and keyboard nav.
+   *  Called once, on page load. */
   function bindUI() {
     const skipBtn = document.getElementById("nepSkipBtn");
     const viewBtn = document.getElementById("nepViewBtn");
     const closeX = document.getElementById("newEventPopupCloseX");
     const overlay = document.getElementById("newEventPopupOverlay");
+    const prevBtn = document.getElementById("nepPrevBtn");
+    const nextBtn = document.getElementById("nepNextBtn");
+    const card = document.getElementById("nepCard");
 
     if (skipBtn) skipBtn.addEventListener("click", handleSkip);
     if (viewBtn) viewBtn.addEventListener("click", handleView);
     if (closeX) closeX.addEventListener("click", handleSkip); // X = same as Skip
+    if (prevBtn) prevBtn.addEventListener("click", goPrev);
+    if (nextBtn) nextBtn.addEventListener("click", goNext);
     if (overlay) {
       overlay.addEventListener("click", (e) => {
         if (e.target === overlay) handleSkip();
       });
     }
+
+    // ---- Swipe support (touch) ----
+    let touchStartX = null;
+    if (card) {
+      card.addEventListener("touchstart", (e) => {
+        touchStartX = e.touches[0].clientX;
+      }, { passive: true });
+      card.addEventListener("touchmove", (e) => {
+        if (touchStartX === null) return;
+        const dx = e.touches[0].clientX - touchStartX;
+        card.classList.toggle("swiping-left", dx < -15);
+        card.classList.toggle("swiping-right", dx > 15);
+      }, { passive: true });
+      card.addEventListener("touchend", (e) => {
+        if (touchStartX === null) return;
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        card.classList.remove("swiping-left", "swiping-right");
+        if (dx < -50) goNext();
+        else if (dx > 50) goPrev();
+        touchStartX = null;
+      });
+
+      // ---- Basic mouse-drag swipe support for desktop ----
+      let mouseStartX = null;
+      card.addEventListener("mousedown", (e) => { mouseStartX = e.clientX; });
+      window.addEventListener("mouseup", (e) => {
+        if (mouseStartX === null) return;
+        const dx = e.clientX - mouseStartX;
+        card.classList.remove("swiping-left", "swiping-right");
+        if (dx < -60) goNext();
+        else if (dx > 60) goPrev();
+        mouseStartX = null;
+      });
+      window.addEventListener("mousemove", (e) => {
+        if (mouseStartX === null) return;
+        const dx = e.clientX - mouseStartX;
+        card.classList.toggle("swiping-left", dx < -15);
+        card.classList.toggle("swiping-right", dx > 15);
+      });
+    }
+
+    // ---- Keyboard navigation while the popup is open ----
+    document.addEventListener("keydown", (e) => {
+      if (!document.getElementById("newEventPopupOverlay").classList.contains("visible")) return;
+      if (e.key === "ArrowLeft") goPrev();
+      if (e.key === "ArrowRight") goNext();
+      if (e.key === "Escape") handleSkip();
+    });
   }
 
   // Public API
@@ -3029,7 +3232,7 @@ const NewEventsFeature = (function () {
   };
 })();
 
-NewEventsFeature.bindUI(); // wire up the popup's Skip / View / Close buttons once
+NewEventsFeature.bindUI(); // wire up the popup's Skip / View / Close / swipe / arrow-nav once
 
 renderAll();
 
