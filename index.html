@@ -726,22 +726,30 @@ body {
    pero hindi rin sila makakasagabal.
    ============================================ */
 .poster-v2{
-  width:min(680px, 100%); background:#fff; border-radius:22px;
+  /* Desktop: hindi na masyadong lumalapad ang card — may limit na 900px
+     (o sakto sa laki ng container kung mas maliit pa ito sa 900px). */
+  width:100%; max-width:900px; margin:0 auto;
+  background:#fff; border-radius:22px;
   overflow:hidden; box-shadow:var(--shadow); position:relative;
-  display:flex; min-height:340px;
+  display:flex; flex-direction:column; min-height:340px;
   animation:posterIn .4s var(--ease);
+  box-sizing:border-box;
 }
 .poster-v2-photo{
-  position:absolute; top:0; right:0; bottom:0; width:52%;
-  background-size:cover; background-position:center 55%;
-  clip-path: polygon(22% 0, 100% 0, 100% 100%, 0% 100%);
+  /* background-image + background-size:cover dito ang katumbas ng
+     "width:100% + object-fit:cover" para sa isang <img> — pareho silang
+     nagpapa-fill ng buong lapad nang hindi na-de-deform (naka-crop na
+     lang, hindi naka-stretch) ang litrato. */
+  position:relative; width:100%; height:280px;
+  background-size:cover; background-position:center 45%;
+  clip-path:none;
 }
 .poster-v2-photo::after{
   content:''; position:absolute; inset:0;
-  background:linear-gradient(100deg, rgba(255,255,255,0.97) 0%, rgba(255,255,255,0.55) 18%, rgba(255,255,255,0) 40%);
+  background:linear-gradient(180deg, rgba(255,255,255,0) 45%, rgba(255,255,255,0.85) 87%, #fff 100%);
 }
 .poster-v2-content{
-  position:relative; z-index:2; padding:34px 32px 28px; width:62%;
+  position:relative; z-index:2; padding:24px 32px 28px; width:100%;
   display:flex; flex-direction:column; gap:14px;
 }
 .poster-v2-badge{
@@ -754,7 +762,7 @@ body {
   font-family:var(--display); font-weight:400; font-size:34px; line-height:1.05;
   color:var(--ink); margin:0; text-transform:uppercase; letter-spacing:.3px;
 }
-.poster-v2-title .accent{ color:var(--red); display:block; }
+.poster-v2-title .accent{ color:#000000; display:block; }
 .poster-v2-sub{
   font-family:var(--mono); font-size:11.5px; letter-spacing:1px; text-transform:uppercase;
   color:var(--ink); opacity:.55; margin:0;
@@ -774,17 +782,52 @@ body {
   display:flex; align-items:center; flex-wrap:wrap; gap:10px;
 }
 .poster-v2-corner{
-  position:absolute; right:0; bottom:0; width:130px; height:130px; z-index:3;
-  background:var(--red); clip-path:polygon(100% 0, 100% 100%, 0 100%);
-  opacity:.92;
+  display:none;
+}
+@media (max-width:880px){
+  /* Full-bleed sa mobile/tablet: pinapalabas ng card ang sarili nito
+     hanggang sa gilid ng screen sa pamamagitan ng pag-cancel sa padding
+     ng main.layout (18px dito) gamit ang negative margin. Kailangang
+     `overflow: visible` (hindi lang overflow-x) ang gawin sa .stage —
+     kung overflow-x lang ang binago habang naka-hidden pa ang
+     overflow-y, ino-override ito ng browser pabalik sa "auto" (clipped
+     pa rin siya, may hidden scrollbar lang), kaya hindi talaga
+     lumalabas ang card hanggang sa gilid. Ligtas itong gawin dahil wala
+     nang ibang animated na slide sa loob ng .stage habang bukas ang
+     event card/poster. */
+  .stage:has(.poster-stage){ overflow:visible; }
+  .poster-stage{ margin:0 -18px; }
+  .poster-v2{ max-width:none; border-radius:0; box-shadow:none; }
 }
 @media (max-width:640px){
   .poster-v2{ flex-direction:column; min-height:0; }
   .poster-v2-photo{ position:relative; width:100%; height:150px; clip-path:none; }
-  .poster-v2-photo::after{ background:linear-gradient(180deg, rgba(255,255,255,0) 40%, rgba(255,255,255,0.97) 95%); }
+  .poster-v2-photo::after{ background:linear-gradient(180deg, rgba(255,255,255,0) 35%, rgba(255,255,255,0.85) 80%, #fff 100%); }
   .poster-v2-content{ width:100%; padding:22px 20px 20px; }
   .poster-v2-title{ font-size:26px; }
   .poster-v2-corner{ display:none; }
+}
+@media (max-width:480px){
+  /* Sa napakaliit na screen, ipagpalit ang 18px na negative margin ng
+     mas mababang breakpoint (12px) para tumugma sa aktwal na padding
+     ng main.layout dito. */
+  .poster-stage{ margin:0 -12px; }
+  .poster-v2-photo{ height:130px; }
+  .poster-v2-content{ padding:18px 16px 18px; gap:11px; }
+  .poster-v2-badge{ font-size:10px; padding:5px 11px; }
+  .poster-v2-title{ font-size:22px; }
+  .poster-v2-sub{ font-size:10.5px; }
+  .poster-v2-facts{ gap:14px; }
+  .poster-v2-fact .ic{ width:28px; height:28px; }
+  .poster-v2-fact .ic svg{ width:13px; height:13px; }
+  .poster-v2-fact .label{ font-size:8.5px; }
+  .poster-v2-fact .value{ font-size:12px; }
+  .poster-v2-footer{ font-size:9px; }
+}
+@media (max-width:360px){
+  .poster-v2-title{ font-size:19px; }
+  .poster-v2-content{ padding:16px 13px 16px; }
+  .poster-v2-facts{ gap:10px; }
 }
   @media (max-width: 600px){
     .poster-title{font-size:32px;}
