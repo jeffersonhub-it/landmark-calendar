@@ -7,6 +7,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Playfair+Display:ital,wght@0,700;0,900;1,900&display=swap" rel="stylesheet">
 <style>
+/* ---------- Event description color states ---------- */
+.desc-unviewed{
+  color:#1e5fd9 !important; /* BLUE - hindi pa na-view */
+  transition: color .35s ease;
+}
+.desc-viewed{
+  color:#B3131A !important; /* RED - na-view na */
+  transition: color .35s ease;
+}
 #loadingScreen{
   position:fixed; inset:0; z-index:9999;
   background:#B3131A;
@@ -2412,7 +2421,7 @@ const USER_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
         <div class="poster-v2-content">
           <span class="poster-v2-badge">${CAT_LABEL[ev.category] || "Event"}</span>
           <h2 class="poster-v2-title">${escapeHtml(titleRest)}<span class="accent">${escapeHtml(lastWord)}</span></h2>
-          <p class="poster-v2-sub">${escapeHtml(ev.description || "")}</p>
+          <p class="poster-v2-sub ${(typeof NewEventsFeature !== "undefined" && NewEventsFeature.isTrackingActive() && !NewEventsFeature.isEventViewed(ev.id)) ? "desc-unviewed" : "desc-viewed"}">${escapeHtml(ev.description || "")}</p>
           <div class="poster-v2-facts">
             <div class="poster-v2-fact">
               <span class="ic">${CAL_SVG}</span>
@@ -2437,6 +2446,12 @@ const USER_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
       </div>
     `;
     stage.appendChild(posterStage);
+// Mark as viewed the moment the poster itself is opened, and flip the color live
+if(typeof NewEventsFeature !== "undefined" && NewEventsFeature.isTrackingActive() && session){
+  if(!NewEventsFeature.isEventViewed(ev.id)){
+    NewEventsFeature.markViewedLive(ev.id, posterStage.querySelector(".poster-v2-sub"));
+  }
+}
     if(canDelete){
       const footer = posterStage.querySelector(".poster-v2-footer");
 
@@ -3103,7 +3118,10 @@ const NewEventsFeature = (function () {
     nepTitleEl.style.fontWeight = ev.viewedNow ? "400" : "800";
     document.getElementById("nepDate").textContent = dateLabel;
     document.getElementById("nepTime").textContent = ev.time || "Time TBA";
-    document.getElementById("nepDesc").textContent = ev.description || "No description provided.";
+    const nepDescEl = document.getElementById("nepDesc");
+nepDescEl.textContent = ev.description || "No description provided.";
+nepDescEl.classList.toggle("desc-unviewed", !ev.viewedNow);
+nepDescEl.classList.toggle("desc-viewed", ev.viewedNow);
 
     // Poster / wallpaper: gradient built from the event's category color
     const poster = document.getElementById("nepPoster");
@@ -3176,20 +3194,48 @@ const NewEventsFeature = (function () {
    * counter badge live, closes the modal, and highlights the event on
    * the calendar grid.
    */
+
   function handleView() {
-    if (!sessionQueue.length || !session) return;
-    const ev = sessionQueue[queueIndex];
+  if (!sessionQueue.length || !session) return;
+  const ev = sessionQueue[queueIndex];
 
-    markIdAsViewed(session.username, ev.id);
-    ev.viewedNow = true;
+  markIdAsViewed(session.username, ev.id);
+  ev.viewedNow = true;
 
-    renderStatusDots();
-    if (typeof renderHeader === "function") renderHeader(); // live badge update
-
-    closePopup();
-    highlightEventOnCalendar(ev);
+  // Live color flip sa modal bago mag-close
+  const nepDescEl = document.getElementById("nepDesc");
+  if(nepDescEl){
+    nepDescEl.classList.remove("desc-unviewed");
+    nepDescEl.classList.add("desc-viewed");
   }
 
+  renderStatusDots();
+  if (typeof renderHeader === "function") renderHeader();
+
+  closePopup();
+  highlightEventOnCalendar(ev);
+}
+/**
+ * Marks an event as viewed immediately (real-time), updates localStorage,
+ * flips the given DOM element's color class instantly, and refreshes
+ * the header counter badge — all without waiting for a full re-render.
+ */
+function markViewedLive(id, descEl){
+  if(!session) return;
+  markIdAsViewed(session.username, id);
+
+  // Live color flip
+  if(descEl){
+    descEl.classList.remove("desc-unviewed");
+    descEl.classList.add("desc-viewed");
+  }
+
+  // keep sessionQueue in sync if this event is in the popup queue
+  const q = sessionQueue.find(x => x.id === id);
+  if(q) q.viewedNow = true;
+
+  if(typeof renderHeader === "function") renderHeader(); // live badge update
+}
   /**
    * Jumps the calendar grid to the event's month/year and applies a
    * pulsing highlight to its cell. Uses this file's existing globals
@@ -3311,7 +3357,8 @@ const NewEventsFeature = (function () {
     getUnviewedCount,
     showNextInQueue,
     isEventViewed,
-    isTrackingActive
+    isTrackingActive,
+markViewedLive
   };
 })();
 
