@@ -531,6 +531,7 @@ body {
   .stage:has(.poster-stage){
     background:transparent;
     min-height:0;
+    overflow:hidden;
   }
   .calendar-wrap{
     background:var(--paper-soft); border:1px solid var(--line-strong); border-radius:var(--radius);
@@ -807,19 +808,22 @@ body {
   display:none;
 }
 @media (max-width:880px){
-  /* Full-bleed sa mobile/tablet: pinapalabas ng card ang sarili nito
-     hanggang sa gilid ng screen sa pamamagitan ng pag-cancel sa padding
-     ng main.layout (18px dito) gamit ang negative margin. Kailangang
-     `overflow: visible` (hindi lang overflow-x) ang gawin sa .stage —
-     kung overflow-x lang ang binago habang naka-hidden pa ang
-     overflow-y, ino-override ito ng browser pabalik sa "auto" (clipped
-     pa rin siya, may hidden scrollbar lang), kaya hindi talaga
-     lumalabas ang card hanggang sa gilid. Ligtas itong gawin dahil wala
-     nang ibang animated na slide sa loob ng .stage habang bukas ang
-     event card/poster. */
-  .stage:has(.poster-stage){ overflow:visible; }
-  .poster-stage{ margin:0 -18px; }
-  .poster-v2{ max-width:none; border-radius:0; box-shadow:none; }
+  /*
+   * Keep the poster inside the same padded column as the calendar.
+   * The old negative margin made the wallpaper wider than `.stage`, which
+   * caused the left edge to overflow on phones.
+   */
+  .poster-stage{
+    width:100%;
+    max-width:100%;
+    margin:0;
+  }
+  .poster-v2{
+    width:100%;
+    max-width:100%;
+    border-radius:0;
+    box-shadow:none;
+  }
 }
 @media (max-width:640px){
   .poster-v2{ flex-direction:column; min-height:0; }
@@ -838,10 +842,8 @@ body {
   .poster-v2-corner{ display:none; }
 }
 @media (max-width:480px){
-  /* Sa napakaliit na screen, ipagpalit ang 18px na negative margin ng
-     mas mababang breakpoint (12px) para tumugma sa aktwal na padding
-     ng main.layout dito. */
-  .poster-stage{ margin:0 -12px; padding-top:0; }
+  /* Match the phone-sized main layout without escaping its left/right padding. */
+  .poster-stage{ width:100%; max-width:100%; margin:0; padding-top:0; }
   .poster-v2-photo{ height:clamp(150px, 58vw, 210px); }
   .poster-v2-content{ padding:18px 16px 18px; gap:11px; }
   .poster-v2-badge{ font-size:10px; padding:5px 11px; }
