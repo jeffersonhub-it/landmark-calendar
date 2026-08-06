@@ -845,6 +845,23 @@ body {
     background:var(--paper-soft); border-radius:var(--radius); padding:28px; width:min(400px, 100%);
     max-height:88vh; overflow:auto; position:relative; box-shadow:var(--shadow);
   }
+.new-badge{
+  display:inline-block;
+  background:#1e5fd9;
+  color:#fff;
+  font-family:var(--mono);
+  font-size:8.5px;
+  font-weight:700;
+  letter-spacing:.5px;
+  padding:2px 6px;
+  border-radius:999px;
+  text-transform:uppercase;
+  animation:newBadgePulse 1.6s ease-in-out infinite;
+}
+@keyframes newBadgePulse{
+  0%, 100%{ opacity:1; }
+  50%{ opacity:.55; }
+}
   .account-modal h3{font-family:var(--display); margin-top:0; font-size:19px; letter-spacing:.3px; font-weight:400;}
   .tabs{display:flex; gap:0; margin-bottom:16px; border-bottom:1.5px solid var(--line-strong);}
   .tabs button{
@@ -2577,18 +2594,37 @@ function openYearOverview(){
 
   openOverlay("yearOverviewOverlay");
 }
-  function openChoiceModal(dayEvents, key){
+ function openChoiceModal(dayEvents, key){
     const d = new Date(key + "T00:00:00");
     document.getElementById("choiceDateLabel").textContent =
       d.toLocaleDateString(undefined, {weekday:"long", month:"long", day:"numeric"});
     const list = document.getElementById("choiceList");
     list.innerHTML = "";
+
+    const trackingOn = typeof NewEventsFeature !== "undefined" && NewEventsFeature.isTrackingActive();
+
     dayEvents.forEach(ev => {
       const item = document.createElement("div");
       item.className = "choice-item";
-      item.innerHTML = `<span class="choice-dot" style="background:${catColor(ev.category)}"></span>
+      item.dataset.eventId = ev.id;
+
+      let dotColor = catColor(ev.category);
+      let newBadge = "";
+      let titleStyle = "font-weight:700;";
+
+      if(trackingOn){
+        const viewed = NewEventsFeature.isEventViewed(ev.id);
+        dotColor = viewed ? "#B3131A" : "#1e5fd9"; // RED = na-view na, BLUE = bago/unviewed
+        item.classList.add(viewed ? "choice-viewed" : "choice-unviewed");
+        if(!viewed){
+          newBadge = `<span class="new-badge">NEW</span>`;
+          titleStyle = "font-weight:800;";
+        }
+      }
+
+      item.innerHTML = `<span class="choice-dot" style="background:${dotColor}"></span>
         <div>
-          <div style="font-weight:700;">${escapeHtml(ev.title)}</div>
+          <div style="${titleStyle} display:flex; align-items:center; gap:6px;">${escapeHtml(ev.title)}${newBadge}</div>
           <div style="font-size:11px; opacity:.6;">${CAT_LABEL[ev.category]} ${ev.time ? "&middot; " + escapeHtml(ev.time) : ""}</div>
         </div>`;
       item.onclick = () => { closeOverlay("choiceOverlay"); activeEvent = ev; renderAll(); };
@@ -3240,6 +3276,16 @@ function markViewedLive(id, descEl){
     chip.classList.remove("chip-unviewed");
     chip.classList.add("chip-viewed");
     chip.style.background = "#B3131A"; // RED
+  });
+
+  // Live color flip sa choice modal (yung listahan pag maraming event sa isang araw)
+  document.querySelectorAll(`.choice-item[data-event-id="${id}"]`).forEach(item => {
+    item.classList.remove("choice-unviewed");
+    item.classList.add("choice-viewed");
+    const dot = item.querySelector(".choice-dot");
+    if(dot) dot.style.background = "#B3131A";
+    const badge = item.querySelector(".new-badge");
+    if(badge) badge.remove();
   });
 
   // keep sessionQueue in sync if this event is in the popup queue
