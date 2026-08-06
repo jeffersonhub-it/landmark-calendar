@@ -3686,5 +3686,35 @@ renderAll();
 }
 })();
 </script>
+<script>
+  // Replace only the calendar wallpaper source; preserve all existing sizing,
+  // positioning, dimensions, and responsive CSS rules.
+  (() => {
+    const wallpaperUrl = "url('Jeff_1786011457086.png')";
+    const inlineWallpaper = /url\(\s*(?:"data:image\/jpeg;base64,[^"]*"|'data:image\/jpeg;base64,[^']*'|data:image\/jpeg;base64,[^)]*)\s*\)/;
+
+    const replaceWallpaperSource = (element) => {
+      if (!element) return;
+      const current = getComputedStyle(element).backgroundImage;
+      if (inlineWallpaper.test(current)) {
+        element.style.backgroundImage = current.replace(inlineWallpaper, wallpaperUrl);
+      }
+    };
+
+    replaceWallpaperSource(document.body);
+    document.querySelectorAll(".poster-top").forEach(replaceWallpaperSource);
+
+    const replaceDynamicPosterPhotos = () => {
+      document.querySelectorAll(".poster-v2-photo").forEach((element) => {
+        element.style.backgroundImage = wallpaperUrl;
+      });
+    };
+    replaceDynamicPosterPhotos();
+    new MutationObserver(replaceDynamicPosterPhotos).observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  })();
+</script>
 </body>
 </html>
