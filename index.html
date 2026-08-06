@@ -858,6 +858,15 @@ body {
   text-transform:uppercase;
   animation:newBadgePulse 1.6s ease-in-out infinite;
 }
+.new-badge.mini{
+  font-size:7px;
+  padding:1px 5px;
+  margin-left:4px;
+  vertical-align:middle;
+}
+.ys-month-block.ys-has-unread .ys-row{
+  box-shadow: inset 3px 0 0 #1e5fd9;
+}
 @keyframes newBadgePulse{
   0%, 100%{ opacity:1; }
   50%{ opacity:.55; }
@@ -2046,6 +2055,7 @@ summaryCard.querySelector("#mYearNext").onclick = () => {
 
     const list = summaryCard.querySelector("#yearSummaryList");
     let yearTotal = 0;
+    const trackingOn = typeof NewEventsFeature !== "undefined" && NewEventsFeature.isTrackingActive();
     MONTH_SHORT.forEach((label, idx) => {
       const monthEvents = events.filter(ev => {
         const d = new Date(ev.date + "T00:00:00");
@@ -2053,16 +2063,29 @@ summaryCard.querySelector("#mYearNext").onclick = () => {
       }).sort((a,b) => a.date.localeCompare(b.date));
       yearTotal += monthEvents.length;
 
+      let dotsHtml;
+      const hasUnread = trackingOn && monthEvents.some(ev => !NewEventsFeature.isEventViewed(ev.id));
+
+      if(trackingOn){
+        // Kokolapsin ang mga dot sa max 2: BLUE (may unviewed pa) at/o RED (may viewed na)
+        const states = [...new Set(monthEvents.map(ev => NewEventsFeature.isEventViewed(ev.id)))]
+          .sort((a,b) => (a === b ? 0 : a ? 1 : -1)); // blue (unviewed) muna
+        dotsHtml = states.map(v => `<span class="dot" style="background:${v ? "#B3131A" : "#1e5fd9"}"></span>`).join("");
+      } else {
+        dotsHtml = [...new Set(monthEvents.map(ev => ev.category))].map(c => `<span class="dot" style="background:${catColor(c)}"></span>`).join("");
+      }
+
       const block = document.createElement("div");
-      block.className = "ys-month-block" + (idx === viewMonth ? " active-month" : "");
+      block.className = "ys-month-block" + (idx === viewMonth ? " active-month" : "") + (hasUnread ? " ys-has-unread" : "");
 
       const row = document.createElement("button");
       row.type = "button";
       row.className = "ys-row";
       row.innerHTML = `
         <span class="ys-month">${label}</span>
-        <span class="ys-dots">${[...new Set(monthEvents.map(ev => ev.category))].map(c => `<span class="dot" style="background:${catColor(c)}"></span>`).join("")}</span>
+        <span class="ys-dots">${dotsHtml}</span>
         <span class="ys-count">${monthEvents.length || ""}</span>
+        ${hasUnread ? '<span class="new-badge mini">NEW</span>' : ""}
       `;
       // Clicking the month header switches the browse view to that month.
       row.onclick = () => { viewMonth = idx; renderAll(); };
@@ -2077,10 +2100,27 @@ summaryCard.querySelector("#mYearNext").onclick = () => {
           const evBtn = document.createElement("button");
           evBtn.type = "button";
           evBtn.className = "ys-event-item";
+          evBtn.dataset.eventId = ev.id;
+
+          let dotColor = catColor(ev.category);
+          let newBadge = "";
+          let titleWeight = "500";
+
+          if(trackingOn){
+            const viewed = NewEventsFeature.isEventViewed(ev.id);
+            dotColor = viewed ? "#B3131A" : "#1e5fd9";
+            evBtn.classList.add(viewed ? "ys-viewed" : "ys-unviewed");
+            if(!viewed){
+              newBadge = `<span class="new-badge mini">NEW</span>`;
+              titleWeight = "800";
+            }
+          }
+
           evBtn.innerHTML = `
-            <span class="dot" style="background:${catColor(ev.category)}"></span>
+            <span class="dot" style="background:${dotColor}"></span>
             <span class="ys-event-day">${d.getDate()}</span>
-            <span class="ys-event-title">${escapeHtml(ev.title)}</span>
+            <span class="ys-event-title" style="font-weight:${titleWeight};">${escapeHtml(ev.title)}</span>
+            ${newBadge}
           `;
           evBtn.title = `${escapeHtml(ev.title)} — ${d.toLocaleDateString(undefined, {month:"long", day:"numeric"})}`;
           evBtn.onclick = (e) => {
@@ -3278,12 +3318,14 @@ function markViewedLive(id, descEl){
     chip.style.background = "#B3131A"; // RED
   });
 
-  // Live color flip sa choice modal (yung listahan pag maraming event sa isang araw)
-  document.querySelectorAll(`.choice-item[data-event-id="${id}"]`).forEach(item => {
-    item.classList.remove("choice-unviewed");
-    item.classList.add("choice-viewed");
-    const dot = item.querySelector(".choice-dot");
+  // Live color flip sa "Year at a Glance" sidebar list item
+  document.querySelectorAll(`.ys-event-item[data-event-id="${id}"]`).forEach(item => {
+    item.classList.remove("ys-unviewed");
+    item.classList.add("ys-viewed");
+    const dot = item.querySelector(".dot");
     if(dot) dot.style.background = "#B3131A";
+    const titleEl = item.querySelector(".ys-event-title");
+    if(titleEl) titleEl.style.fontWeight = "500";
     const badge = item.querySelector(".new-badge");
     if(badge) badge.remove();
   });
