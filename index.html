@@ -2364,11 +2364,16 @@ content.querySelector("#edgeNextYear").onclick = () => {
       dayEvents.slice(0,2).forEach(ev => {
     const chip = document.createElement("div");
     chip.className = "event-chip";
-    /* ---- NEW: Messenger-style bold text + unread dot on the event bar itself ---- */
-    if(typeof NewEventsFeature !== "undefined" && NewEventsFeature.isTrackingActive()){
-        chip.classList.add(NewEventsFeature.isEventViewed(ev.id) ? "chip-viewed" : "chip-unviewed");
+    chip.dataset.eventId = ev.id; // para ma-target siya later ng markViewedLive
+
+    const trackingOn = typeof NewEventsFeature !== "undefined" && NewEventsFeature.isTrackingActive();
+    if(trackingOn){
+        const viewed = NewEventsFeature.isEventViewed(ev.id);
+        chip.classList.add(viewed ? "chip-viewed" : "chip-unviewed");
+        chip.style.background = viewed ? "#B3131A" : "#1e5fd9"; // RED = na-view na, BLUE = hindi pa
+    } else {
+        chip.style.background = catColor(ev.category); // guest / walang naka-login = original category color
     }
-    chip.style.background = catColor(ev.category);
     chip.textContent = ev.title;
     cell.appendChild(chip);
 });
@@ -3224,11 +3229,18 @@ function markViewedLive(id, descEl){
   if(!session) return;
   markIdAsViewed(session.username, id);
 
-  // Live color flip
+  // Live color flip sa poster description
   if(descEl){
     descEl.classList.remove("desc-unviewed");
     descEl.classList.add("desc-viewed");
   }
+
+  // Live color flip sa lahat ng matching event chip sa calendar grid (kung visible)
+  document.querySelectorAll(`.event-chip[data-event-id="${id}"]`).forEach(chip => {
+    chip.classList.remove("chip-unviewed");
+    chip.classList.add("chip-viewed");
+    chip.style.background = "#B3131A"; // RED
+  });
 
   // keep sessionQueue in sync if this event is in the popup queue
   const q = sessionQueue.find(x => x.id === id);
