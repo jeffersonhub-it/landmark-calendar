@@ -993,7 +993,49 @@ body {
   .reg-success-modal p{
     font-size:14px; line-height:1.55; opacity:.8; margin:0 0 22px;
   }
+  .reg-success-note{
+    font-size:12.5px !important; line-height:1.5 !important; opacity:1 !important;
+    background:rgba(140,26,26,0.08); border:1.5px solid var(--gold); color:var(--gold);
+    border-radius:var(--radius-sm); padding:10px 12px; margin:-8px 0 22px !important;
+    font-weight:600; text-align:left;
+  }
   .reg-success-modal .btn{width:100%;}
+
+  /* ---------- Terms & Policy modal ---------- */
+  .terms-modal{
+    background:var(--paper-soft); border-radius:var(--radius); padding:28px; width:min(440px, 100%);
+    max-height:88vh; overflow:auto; position:relative; box-shadow:var(--shadow);
+    display:flex; flex-direction:column; animation:scaleIn .22s var(--ease);
+  }
+  .terms-modal h3{font-family:var(--display); margin-top:0; font-size:20px; font-weight:400;}
+  .terms-scroll{
+    border:1.5px solid var(--line-strong); border-radius:var(--radius-sm); background:#fff;
+    padding:14px 16px; max-height:260px; overflow-y:auto; margin-bottom:16px;
+    font-size:12.5px; line-height:1.6; color:var(--ink); opacity:.82;
+  }
+  .terms-scroll h4{
+    font-family:var(--mono); font-size:10px; letter-spacing:1px; text-transform:uppercase;
+    opacity:.6; margin:14px 0 6px;
+  }
+  .terms-scroll h4:first-child{margin-top:0;}
+  .terms-scroll p{margin:0 0 10px;}
+  .terms-agree-row{
+    display:flex; align-items:flex-start; gap:10px; cursor:pointer;
+    font-size:12.5px; line-height:1.5; margin-bottom:18px; user-select:none;
+  }
+  .terms-agree-row input[type="checkbox"]{
+    appearance:none; -webkit-appearance:none; width:18px; height:18px; flex-shrink:0; margin-top:1px;
+    border:1.5px solid var(--line-strong); border-radius:5px; background:#fff; cursor:pointer;
+    position:relative; transition:background .16s ease, border-color .16s ease;
+  }
+  .terms-agree-row input[type="checkbox"]:checked{background:var(--red); border-color:var(--red);}
+  .terms-agree-row input[type="checkbox"]:checked::after{
+    content:""; position:absolute; left:5px; top:1px; width:5px; height:9px;
+    border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg);
+  }
+  .terms-agree-row input[type="checkbox"]:focus-visible{box-shadow:0 0 0 3px rgba(179,19,26,0.18);}
+  .terms-modal .form-actions{display:flex; gap:10px; margin-top:0;}
+  .terms-modal .form-actions .btn{flex:1;}
 
   .account-modal{
     background:var(--paper-soft); border-radius:var(--radius); padding:28px; width:min(400px, 100%);
@@ -1692,8 +1734,39 @@ body {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
     </div>
     <h3>Account Created</h3>
-    <p id="regSuccessMessage">Account created successfully! Please wait for the Head Admin to approve your account before logging in.</p>
+    <p id="regSuccessMessage">Account created successfully!</p>
+    <p class="reg-success-note">⚠ Please wait for the Head Admin to approve your account before you can log in.</p>
     <button type="button" class="btn primary" id="regSuccessOkBtn">OK</button>
+  </div>
+</div>
+
+<!-- Terms & Policy modal: shown when a user clicks "Create Account" on either
+     the Store Access or View Only registration form, instead of submitting
+     right away. The account is only actually created once the user checks
+     "I Agree" and taps "Accept & Submit". -->
+<div class="overlay" id="termsOverlay">
+  <div class="terms-modal" id="termsModalBody">
+    <button class="modal-close" data-close="termsOverlay">&times;</button>
+    <h3>Terms &amp; Policy</h3>
+    <div class="terms-scroll" id="termsScrollText">
+      <h4>Account &amp; Access</h4>
+      <p>By registering, you confirm the information you provide is accurate and that this account will be used solely for store calendar purposes. Newly created accounts remain in "Pending Approval" status until reviewed by the Head Admin, who decides whether the account receives View Only or Administrator access.</p>
+      <h4>Acceptable Use</h4>
+      <p>Accounts may not be shared outside authorized staff, used to submit false or misleading event information, or used to access, alter, or delete records beyond the permissions granted to your role.</p>
+      <h4>Data &amp; Privacy</h4>
+      <p>Your username, and activity such as logins and event changes, may be logged and reviewed by the Head Admin for security and accountability purposes. Passwords are stored only to authenticate your account and should not be reused from other sensitive accounts.</p>
+      <h4>Changes</h4>
+      <p>These terms may be updated from time to time. Continued use of an account after changes take effect constitutes acceptance of the updated terms.</p>
+    </div>
+    <label class="terms-agree-row" for="termsAgreeCheckbox">
+      <input type="checkbox" id="termsAgreeCheckbox">
+      <span>I have read and agree to the Terms &amp; Policy above.</span>
+    </label>
+    <div class="auth-msg err" id="termsMsg"></div>
+    <div class="form-actions">
+      <button type="button" class="btn block" data-close="termsOverlay">Cancel</button>
+      <button type="button" class="btn primary block" id="termsAcceptBtn" disabled>Accept &amp; Submit</button>
+    </div>
   </div>
 </div>
 
@@ -1747,6 +1820,7 @@ body {
   /* ================= DATA LAYER (Firestore, real-time synced) ================= */
   const LS_SESSION = "meridian_session"; // session stays LOCAL per device/browser on purpose
   const IDLE_LIMIT_MS = 15 * 60 * 1000; // auto log-out after 15 minutes of no activity
+  const MIN_FIELD_LEN = 4; // minimum characters required for Username / Password on Login & Register
 
  const usersCol = firebaseReady ? db.collection("users") : null;
 const eventsCol = firebaseReady ? db.collection("events") : null;
@@ -1865,34 +1939,48 @@ function renderViewOnlyModal(){
     const u = body.querySelector("#voLoginUser").value.trim();
     const p = body.querySelector("#voLoginPass").value;
     const msg = body.querySelector("#voLoginMsg");
+    msg.className = "auth-msg err";
+    if(!u || !p){ msg.textContent = "Enter a username and password."; return; }
+    if(u.length < MIN_FIELD_LEN || p.length < MIN_FIELD_LEN){
+      msg.textContent = `Username and password must be at least ${MIN_FIELD_LEN} characters.`; return;
+    }
     const found = users.find(x => x.username.toLowerCase() === u.toLowerCase() && x.password === p);
     if(!found){ msg.textContent = "Incorrect username or password."; return; }
     if(isPendingRole(found.role)){ msg.textContent = "Your account is still awaiting approval from the Head Admin."; return; }
     completeLogin(found);
   });
-  body.querySelector("#voRegBtn").addEventListener("click", async () => {
+  body.querySelector("#voRegBtn").addEventListener("click", () => {
     const u = body.querySelector("#voRegUser").value.trim();
     const p = body.querySelector("#voRegPass").value;
     const msg = body.querySelector("#voRegMsg");
+    msg.className = "auth-msg err";
     if(!u || !p){ msg.textContent = "Choose a username and password."; return; }
+    if(u.length < MIN_FIELD_LEN || p.length < MIN_FIELD_LEN){
+      msg.textContent = `Username and password must be at least ${MIN_FIELD_LEN} characters.`; return;
+    }
     if(users.some(x => x.username.toLowerCase() === u.toLowerCase())){
       msg.textContent = "That username is already taken."; return;
     }
-    try{
-      // "requestSource" records which registration form was used (viewonly vs
-      // admin) purely so the Head Admin's roster can file this request into
-      // the correct "View Only Requests" / "Admin Requests" section. It does
-      // NOT decide the account's actual role — the Head Admin still picks
-      // View Only or Admin explicitly when approving.
-      await usersCol.doc(u.toLowerCase()).set({ username:u, password:p, role: ROLE_PENDING, requestSource: "viewonly" });
-      msg.className = "auth-msg ok";
-      msg.textContent = "Account created. Please wait for the Head Admin to approve it before logging in.";
-      showRegSuccessModal("Account created successfully! Please wait for the Head Admin to approve your account before logging in.");
-      body.querySelector("#voRegUser").value = "";
-      body.querySelector("#voRegPass").value = "";
-    } catch(err){
-      msg.textContent = "Could not create account. Check your connection.";
-    }
+    // Clicking "Create Account" opens the Terms & Policy modal instead of
+    // submitting right away; the account is only written to Firestore once
+    // the user checks "I Agree" and taps "Accept & Submit" below.
+    openTermsModal(async () => {
+      try{
+        // "requestSource" records which registration form was used (viewonly vs
+        // admin) purely so the Head Admin's roster can file this request into
+        // the correct "View Only Requests" / "Admin Requests" section. It does
+        // NOT decide the account's actual role — the Head Admin still picks
+        // View Only or Admin explicitly when approving.
+        await usersCol.doc(u.toLowerCase()).set({ username:u, password:p, role: ROLE_PENDING, requestSource: "viewonly" });
+        msg.className = "auth-msg ok";
+        msg.textContent = "Account created. Please wait for the Head Admin to approve it before logging in.";
+        showRegSuccessModal("Account created successfully!");
+        body.querySelector("#voRegUser").value = "";
+        body.querySelector("#voRegPass").value = "";
+      } catch(err){
+        msg.textContent = "Could not create account. Check your connection.";
+      }
+    });
   });
 }
   function cryptoId(){ return "e" + Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
@@ -2161,41 +2249,53 @@ headerRight.appendChild(countPill);
         const u = body.querySelector("#loginUser").value.trim();
         const p = body.querySelector("#loginPass").value;
         const msg = body.querySelector("#loginMsg");
+        msg.className = "auth-msg err";
         if(!u || !p){ msg.textContent = "Enter a username and password."; return; }
+        if(u.length < MIN_FIELD_LEN || p.length < MIN_FIELD_LEN){
+          msg.textContent = `Username and password must be at least ${MIN_FIELD_LEN} characters.`; return;
+        }
         const found = users.find(x => x.username.toLowerCase() === u.toLowerCase() && x.password === p);
         if(!found){ msg.textContent = "Incorrect username or password."; return; }
         if(isPendingRole(found.role)){ msg.textContent = "Your account is still awaiting approval from the Head Admin."; return; }
         completeLogin(found);
       });
-      body.querySelector("#regBtn").addEventListener("click", async () => {
+      body.querySelector("#regBtn").addEventListener("click", () => {
         const u = body.querySelector("#regUser").value.trim();
         const p = body.querySelector("#regPass").value;
         const msg = body.querySelector("#regMsg");
-        if(!u || !p){ msg.textContent = "Choose a username and password."; msg.className = "auth-msg err"; return; }
-        if(u.length < 2){ msg.textContent = "Username must be at least 2 characters."; msg.className = "auth-msg err"; return; }
+        msg.className = "auth-msg err";
+        if(!u || !p){ msg.textContent = "Choose a username and password."; return; }
+        if(u.length < MIN_FIELD_LEN || p.length < MIN_FIELD_LEN){
+          msg.textContent = `Username and password must be at least ${MIN_FIELD_LEN} characters.`; return;
+        }
         if(users.some(x => x.username.toLowerCase() === u.toLowerCase())){
-          msg.textContent = "That username is already taken."; msg.className = "auth-msg err";
+          msg.textContent = "That username is already taken.";
           alert("Registration failed: that username is already taken. Please choose a different one.");
           return;
         }
-        const btn = body.querySelector("#regBtn");
-        btn.disabled = true;
-        try{
-          // See the matching comment in the View Only registration handler:
-          // "requestSource" only files this request into the right roster
-          // section — it never determines the approved role.
-          await usersCol.doc(u.toLowerCase()).set({ username:u, password:p, role: ROLE_PENDING, requestSource: "admin" });
-          msg.textContent = "Account created. Please wait for the Head Admin to approve it before logging in."; msg.className = "auth-msg ok";
-          showRegSuccessModal("Account created successfully! Please wait for the Head Admin to approve your account before logging in.");
-          body.querySelector("#regUser").value = "";
-          body.querySelector("#regPass").value = "";
-        } catch(err){
-          msg.textContent = "Could not create account. Check your connection."; msg.className = "auth-msg err";
-          alert("Registration failed: could not create the account. Please check your internet connection and try again.");
-          console.error(err);
-        } finally {
-          btn.disabled = false;
-        }
+        // Clicking "Create Account" opens the Terms & Policy modal instead of
+        // submitting right away; the account is only written to Firestore
+        // once the user checks "I Agree" and taps "Accept & Submit" below.
+        openTermsModal(async () => {
+          const btn = body.querySelector("#regBtn");
+          btn.disabled = true;
+          try{
+            // See the matching comment in the View Only registration handler:
+            // "requestSource" only files this request into the right roster
+            // section — it never determines the approved role.
+            await usersCol.doc(u.toLowerCase()).set({ username:u, password:p, role: ROLE_PENDING, requestSource: "admin" });
+            msg.textContent = "Account created. Please wait for the Head Admin to approve it before logging in."; msg.className = "auth-msg ok";
+            showRegSuccessModal("Account created successfully!");
+            body.querySelector("#regUser").value = "";
+            body.querySelector("#regPass").value = "";
+          } catch(err){
+            msg.textContent = "Could not create account. Check your connection."; msg.className = "auth-msg err";
+            alert("Registration failed: could not create the account. Please check your internet connection and try again.");
+            console.error(err);
+          } finally {
+            btn.disabled = false;
+          }
+        });
       });
     } else {
       const canManage = isAdminRole(session.role);
@@ -2844,6 +2944,30 @@ if(typeof NewEventsFeature !== "undefined" && NewEventsFeature.isTrackingActive(
   /* ================= MODALS (generic helpers) ================= */
   function openOverlay(id){ document.getElementById(id).classList.add("visible"); }
   function closeOverlay(id){ document.getElementById(id).classList.remove("visible"); }
+
+  // Terms & Policy modal — reused by both the Store Access and View Only
+  // registration forms. Clicking "Register"/"Create Account" opens this
+  // instead of submitting right away; the account is only actually created
+  // once the user checks "I Agree" and taps "Accept & Submit" (onAccept).
+  function openTermsModal(onAccept){
+    const checkbox = document.getElementById("termsAgreeCheckbox");
+    const acceptBtn = document.getElementById("termsAcceptBtn");
+    const msg = document.getElementById("termsMsg");
+    const scrollBox = document.getElementById("termsScrollText");
+
+    checkbox.checked = false;
+    acceptBtn.disabled = true;
+    if(msg) msg.textContent = "";
+    if(scrollBox) scrollBox.scrollTop = 0;
+
+    checkbox.onchange = () => { acceptBtn.disabled = !checkbox.checked; };
+    acceptBtn.onclick = () => {
+      if(!checkbox.checked) return;
+      closeOverlay("termsOverlay");
+      onAccept();
+    };
+    openOverlay("termsOverlay");
+  }
 
   // Event delegation for [data-close] buttons: this catches clicks on close
   // buttons that exist in the page at load time AND on ones created later
