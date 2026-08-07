@@ -2786,28 +2786,35 @@ if(typeof NewEventsFeature !== "undefined" && NewEventsFeature.isTrackingActive(
   function openOverlay(id){ document.getElementById(id).classList.add("visible"); }
   function closeOverlay(id){ document.getElementById(id).classList.remove("visible"); }
 
-  document.querySelectorAll("[data-close]").forEach(btn => {
-    btn.addEventListener("click", () => closeOverlay(btn.dataset.close));
-});
+  // Event delegation for [data-close] buttons: this catches clicks on close
+  // buttons that exist in the page at load time AND on ones created later
+  // dynamically (e.g. the login/View Only modal bodies, which are rebuilt
+  // via innerHTML at runtime and would otherwise never get a listener
+  // attached — that was why the X button on those modals didn't work).
+  document.addEventListener("click", (e) => {
+    const closeBtn = e.target.closest("[data-close]");
+    if(closeBtn) closeOverlay(closeBtn.dataset.close);
+  });
 
-// Login modals (Store Access / View Only Access) must NOT close via backdrop click or Escape —
-// only the "X" close button (data-close / .modal-close) should be able to dismiss them.
-const NON_DISMISSIBLE_OVERLAYS = ["accountOverlay", "viewOnlyOverlay"];
+  // Login modals (Store Access / View Only Access) must NOT close via
+  // backdrop click or Escape — only the "X" close button above should be
+  // able to dismiss them.
+  const NON_DISMISSIBLE_OVERLAYS = ["accountOverlay", "viewOnlyOverlay"];
 
-document.querySelectorAll(".overlay").forEach(ov => {
+  document.querySelectorAll(".overlay").forEach(ov => {
     ov.addEventListener("click", (e) => {
-        if(e.target === ov && !NON_DISMISSIBLE_OVERLAYS.includes(ov.id)){
-            ov.classList.remove("visible");
-        }
+      if(e.target === ov && !NON_DISMISSIBLE_OVERLAYS.includes(ov.id)){
+        ov.classList.remove("visible");
+      }
     });
-});
-document.addEventListener("keydown", (e) => {
+  });
+  document.addEventListener("keydown", (e) => {
     if(e.key === "Escape"){
-        document.querySelectorAll(".overlay.visible").forEach(o => {
-            if(!NON_DISMISSIBLE_OVERLAYS.includes(o.id)) o.classList.remove("visible");
-        });
+      document.querySelectorAll(".overlay.visible").forEach(o => {
+        if(!NON_DISMISSIBLE_OVERLAYS.includes(o.id)) o.classList.remove("visible");
+      });
     }
-});
+  });
 function openYearOverview(){
   const list = document.getElementById("yearOverviewList");
   list.innerHTML = "";
