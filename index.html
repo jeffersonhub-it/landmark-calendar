@@ -1892,10 +1892,12 @@ function completeLogin(user){
   logActivity("login", `Logged in as ${roleLabel(user.role)}`);
   renderAll();
 
-  // NEW EVENTS FEATURE: recompute the unviewed queue for this account
-  // and, if there are any new/unseen events, auto-pop the modal.
+  // NEW EVENTS FEATURE: recompute the unviewed queue for this account so
+  // the "New Events" toolbar button + badge count are accurate right
+  // after login. The popup card no longer auto-shows on login — the
+  // user opens it manually via that button when they want to see it.
   if(typeof NewEventsFeature !== "undefined"){
-    NewEventsFeature.checkForNewEventsAndPopup();
+    NewEventsFeature.computeUnviewed();
   }
 }
 
@@ -3522,19 +3524,10 @@ if(loadingAdminBtn){
         }
         renderAll();
 
-        // NEW EVENTS FEATURE: auto-pop the "new event" card any time a
-        // new event lands in real time while the user is already logged
-        // in and browsing — not just right after login. Skip the very
-        // first snapshot (that case is already handled by completeLogin's
-        // own checkForNewEventsAndPopup() call), and don't re-trigger
-        // while the popup is already open on screen.
-        if(eventsSnapshotCount > 1 && session && typeof NewEventsFeature !== "undefined"){
-          const popupOverlay = document.getElementById("newEventPopupOverlay");
-          const popupAlreadyOpen = popupOverlay && popupOverlay.classList.contains("visible");
-          if(!popupAlreadyOpen){
-            NewEventsFeature.checkForNewEventsAndPopup();
-          }
-        }
+        // NEW EVENTS FEATURE: no auto-popup — the header's renderAll()
+        // above already recomputes the "New Events" badge/count live,
+        // so the user always sees an accurate unread count and opens
+        // the card manually via that button whenever they want to.
     }, markOffline);
 
     if(activityCol){
