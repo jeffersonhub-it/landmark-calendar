@@ -1820,7 +1820,8 @@ body {
   /* ================= DATA LAYER (Firestore, real-time synced) ================= */
   const LS_SESSION = "meridian_session"; // session stays LOCAL per device/browser on purpose
   const IDLE_LIMIT_MS = 15 * 60 * 1000; // auto log-out after 15 minutes of no activity
-  const MIN_FIELD_LEN = 4; // minimum characters required for Username / Password on Login & Register
+  const MIN_USER_LEN = 3; // minimum characters required for Username on Login & Register
+  const MIN_PASS_LEN = 4; // minimum characters required for Password on Login & Register
 
  const usersCol = firebaseReady ? db.collection("users") : null;
 const eventsCol = firebaseReady ? db.collection("events") : null;
@@ -1941,8 +1942,11 @@ function renderViewOnlyModal(){
     const msg = body.querySelector("#voLoginMsg");
     msg.className = "auth-msg err";
     if(!u || !p){ msg.textContent = "Enter a username and password."; return; }
-    if(u.length < MIN_FIELD_LEN || p.length < MIN_FIELD_LEN){
-      msg.textContent = `Username and password must be at least ${MIN_FIELD_LEN} characters.`; return;
+    if(u.length < MIN_USER_LEN){
+      msg.textContent = `Username must be at least ${MIN_USER_LEN} characters.`; return;
+    }
+    if(p.length < MIN_PASS_LEN){
+      msg.textContent = `Password must be at least ${MIN_PASS_LEN} characters.`; return;
     }
     const found = users.find(x => x.username.toLowerCase() === u.toLowerCase() && x.password === p);
     if(!found){ msg.textContent = "Incorrect username or password."; return; }
@@ -1955,8 +1959,11 @@ function renderViewOnlyModal(){
     const msg = body.querySelector("#voRegMsg");
     msg.className = "auth-msg err";
     if(!u || !p){ msg.textContent = "Choose a username and password."; return; }
-    if(u.length < MIN_FIELD_LEN || p.length < MIN_FIELD_LEN){
-      msg.textContent = `Username and password must be at least ${MIN_FIELD_LEN} characters.`; return;
+    if(u.length < MIN_USER_LEN){
+      msg.textContent = `Username must be at least ${MIN_USER_LEN} characters.`; return;
+    }
+    if(p.length < MIN_PASS_LEN){
+      msg.textContent = `Password must be at least ${MIN_PASS_LEN} characters.`; return;
     }
     if(users.some(x => x.username.toLowerCase() === u.toLowerCase())){
       msg.textContent = "That username is already taken."; return;
@@ -2251,8 +2258,11 @@ headerRight.appendChild(countPill);
         const msg = body.querySelector("#loginMsg");
         msg.className = "auth-msg err";
         if(!u || !p){ msg.textContent = "Enter a username and password."; return; }
-        if(u.length < MIN_FIELD_LEN || p.length < MIN_FIELD_LEN){
-          msg.textContent = `Username and password must be at least ${MIN_FIELD_LEN} characters.`; return;
+        if(u.length < MIN_USER_LEN){
+          msg.textContent = `Username must be at least ${MIN_USER_LEN} characters.`; return;
+        }
+        if(p.length < MIN_PASS_LEN){
+          msg.textContent = `Password must be at least ${MIN_PASS_LEN} characters.`; return;
         }
         const found = users.find(x => x.username.toLowerCase() === u.toLowerCase() && x.password === p);
         if(!found){ msg.textContent = "Incorrect username or password."; return; }
@@ -2265,8 +2275,11 @@ headerRight.appendChild(countPill);
         const msg = body.querySelector("#regMsg");
         msg.className = "auth-msg err";
         if(!u || !p){ msg.textContent = "Choose a username and password."; return; }
-        if(u.length < MIN_FIELD_LEN || p.length < MIN_FIELD_LEN){
-          msg.textContent = `Username and password must be at least ${MIN_FIELD_LEN} characters.`; return;
+        if(u.length < MIN_USER_LEN){
+          msg.textContent = `Username must be at least ${MIN_USER_LEN} characters.`; return;
+        }
+        if(p.length < MIN_PASS_LEN){
+          msg.textContent = `Password must be at least ${MIN_PASS_LEN} characters.`; return;
         }
         if(users.some(x => x.username.toLowerCase() === u.toLowerCase())){
           msg.textContent = "That username is already taken.";
