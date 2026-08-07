@@ -2137,7 +2137,7 @@ function renderViewOnlyModal(){
   /* ---- Firestore real-time listeners: any PC that edits data updates everyone else live ---- */
   const syncBanner = document.getElementById("syncBanner");
   const syncBannerText = document.getElementById("syncBannerText");
-  let usersLoaded = false, eventsLoaded = false;
+  let usersLoaded = false, eventsLoaded = false, eventsSnapshotCount = 0;
 
   function markConnected(){
     syncBanner.classList.remove("offline");
@@ -3514,12 +3514,27 @@ if(loadingAdminBtn){
     eventsCol.onSnapshot(snap => {
         events = snap.docs.map(d => d.data());
         eventsLoaded = true;
+        eventsSnapshotCount++;
         if(usersLoaded && eventsLoaded) markConnected();
         if(activeEvent){
             const stillThere = events.find(e => e.id === activeEvent.id);
             activeEvent = stillThere || null;
         }
         renderAll();
+
+        // NEW EVENTS FEATURE: auto-pop the "new event" card any time a
+        // new event lands in real time while the user is already logged
+        // in and browsing — not just right after login. Skip the very
+        // first snapshot (that case is already handled by completeLogin's
+        // own checkForNewEventsAndPopup() call), and don't re-trigger
+        // while the popup is already open on screen.
+        if(eventsSnapshotCount > 1 && session && typeof NewEventsFeature !== "undefined"){
+          const popupOverlay = document.getElementById("newEventPopupOverlay");
+          const popupAlreadyOpen = popupOverlay && popupOverlay.classList.contains("visible");
+          if(!popupAlreadyOpen){
+            NewEventsFeature.checkForNewEventsAndPopup();
+          }
+        }
     }, markOffline);
 
     if(activityCol){
@@ -3719,10 +3734,13 @@ nepDescEl.classList.toggle("desc-viewed", ev.viewedNow);
     if (viewBtn) viewBtn.textContent = ev.viewedNow ? "Viewed \u2713" : "View Event";
   }
 
-  /** Opens the modal at the first card in the queue, if any. */
+  /** Opens the modal at the first still-unviewed card in the queue
+   *  (falling back to the very first card if everything's been seen),
+   *  so clicking "New Events" always jumps straight to what's new. */
   function showNextInQueue() {
     if (unviewedOrSessionEmpty()) return;
-    queueIndex = 0;
+    const firstUnviewedIdx = sessionQueue.findIndex(q => !q.viewedNow);
+    queueIndex = firstUnviewedIdx >= 0 ? firstUnviewedIdx : 0;
     document.getElementById("newEventPopupOverlay").classList.add("visible");
     renderCurrentCard();
   }
@@ -3855,7 +3873,10 @@ function markViewedLive(id, descEl){
    */
   function checkForNewEventsAndPopup() {
     computeUnviewed();
-    if (sessionQueue.length > 0) {
+    // Only auto-pop when there's something genuinely unviewed — using
+    // sessionQueue.length here would re-trigger the popup even after
+    // everything in it had already been marked viewed.
+    if (getUnviewedCount() > 0) {
       showNextInQueue();
     }
   }
