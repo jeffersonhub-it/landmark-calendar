@@ -3830,33 +3830,29 @@ function markViewedLive(id, descEl){
   if(typeof renderHeader === "function") renderHeader(); // live badge update
 }
   /**
-   * Jumps the calendar grid to the event's month/year and applies a
-   * pulsing highlight to its cell. Uses this file's existing globals
-   * (viewYear, viewMonth, activeEvent, monthNavDir, renderAll) so the
-   * grid re-renders through the normal app flow.
+   * Jumps straight into the event's own detail view ("wallpaper"/poster)
+   * so the person lands exactly on what they just tapped "View Event" for.
+   * Since handleView() already marked this event as viewed (in
+   * localStorage) right before calling this, the poster renders with the
+   * "viewed" (red) description color automatically — no extra click
+   * needed. Uses this file's existing globals (viewYear, viewMonth,
+   * activeEvent, monthNavDir, renderAll) so it re-renders through the
+   * normal app flow.
    */
   function highlightEventOnCalendar(ev) {
     const d = new Date(eventStartDate(ev) + "T00:00:00");
 
-    if (typeof activeEvent !== "undefined") activeEvent = null;
     viewYear = d.getFullYear();
     viewMonth = d.getMonth();
     if (typeof monthNavDir !== "undefined") monthNavDir = 0;
+    if (typeof activeEvent !== "undefined") activeEvent = ev; // open the event's wallpaper/poster directly
     renderAll();
 
     requestAnimationFrame(() => {
-      const grid = document.getElementById("grid");
-      if (!grid) return;
-      const targetDay = String(d.getDate());
-      const cells = grid.querySelectorAll(".cell:not(.outside)");
-      cells.forEach(cell => {
-        const numEl = cell.querySelector(".daynum");
-        if (numEl && numEl.textContent.trim() === targetDay) {
-          cell.classList.add("event-highlight-pulse");
-          cell.scrollIntoView({ behavior: "smooth", block: "center" });
-          setTimeout(() => cell.classList.remove("event-highlight-pulse"), 5000);
-        }
-      });
+      const stageEl = document.querySelector(".poster-stage");
+      if (stageEl && typeof stageEl.scrollIntoView === "function") {
+        stageEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     });
   }
 
