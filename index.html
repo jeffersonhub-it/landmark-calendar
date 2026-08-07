@@ -1770,6 +1770,19 @@ function roleLabel(role){
   return "User";
 }
 
+// Which registration form a pending account came from — used only to file
+// the request into the correct Head Admin roster section ("View Only
+// Requests" vs "Admin Requests"). It never decides the account's actual
+// role; the Head Admin always chooses that explicitly on approval.
+const REQUEST_SOURCE_VIEWONLY = "viewonly";
+const REQUEST_SOURCE_ADMIN = "admin";
+function getRequestSource(u){
+  // Legacy pending accounts created before this feature existed have no
+  // requestSource field — file those under Admin Requests by default so
+  // nothing silently disappears from the roster.
+  return u.requestSource === REQUEST_SOURCE_VIEWONLY ? REQUEST_SOURCE_VIEWONLY : REQUEST_SOURCE_ADMIN;
+}
+
 // Shared log-out routine used by the manual "Log out" button AND the idle-timeout auto log-out
 function performLogout(){
   session = null;
@@ -1866,7 +1879,12 @@ function renderViewOnlyModal(){
       msg.textContent = "That username is already taken."; return;
     }
     try{
-      await usersCol.doc(u.toLowerCase()).set({ username:u, password:p, role: ROLE_PENDING });
+      // "requestSource" records which registration form was used (viewonly vs
+      // admin) purely so the Head Admin's roster can file this request into
+      // the correct "View Only Requests" / "Admin Requests" section. It does
+      // NOT decide the account's actual role — the Head Admin still picks
+      // View Only or Admin explicitly when approving.
+      await usersCol.doc(u.toLowerCase()).set({ username:u, password:p, role: ROLE_PENDING, requestSource: "viewonly" });
       msg.className = "auth-msg ok";
       msg.textContent = "Account created. Please wait for the Head Admin to approve it before logging in.";
       showRegSuccessModal("Account created successfully! Please wait for the Head Admin to approve your account before logging in.");
@@ -2163,7 +2181,10 @@ headerRight.appendChild(countPill);
         const btn = body.querySelector("#regBtn");
         btn.disabled = true;
         try{
-          await usersCol.doc(u.toLowerCase()).set({ username:u, password:p, role: ROLE_PENDING });
+          // See the matching comment in the View Only registration handler:
+          // "requestSource" only files this request into the right roster
+          // section — it never determines the approved role.
+          await usersCol.doc(u.toLowerCase()).set({ username:u, password:p, role: ROLE_PENDING, requestSource: "admin" });
           msg.textContent = "Account created. Please wait for the Head Admin to approve it before logging in."; msg.className = "auth-msg ok";
           showRegSuccessModal("Account created successfully! Please wait for the Head Admin to approve your account before logging in.");
           body.querySelector("#regUser").value = "";
@@ -3047,9 +3068,86 @@ function openYearOverview(){
   });
 
   /* ================= ADMIN ROSTER + ACTIVITY MONITORING ================= */
+  // Builds one "pending requests" section (either View Only Requests or
+  // Admin Requests) as a single .pending-section element containing the
+  // section label and one .roster-item-full.pending block per account.
+  // The approve/reject buttons and their behavior are identical to the
+  // original single-list design — every pending request, regardless of
+  // which form it came from, still lets the Head Admin pick either role.
+  function buildPendingRequestsSection(sectionUsers, sectionLabel){
+    const wrap = document.createElement("div");
+    wrap.className = "pending-section";
+    wrap.innerHTML = `<div class="rh-label" style="margin-bottom:10px;">${escapeHtml(sectionLabel)} &middot; ${sectionUsers.length}</div>`;
+    if(!sectionUsers.length){
+      wrap.innerHTML += `<div class="empty-note">No accounts waiting for approval.</div>`;
+      return wrap;
+    }
+    sectionUsers.forEach(u => {
+      const item = document.createElement("div");
+      item.className = "roster-item-full pending";
+      item.innerHTML = `
+        <div class="roster-item">
+          <span class="u">${escapeHtml(u.username)}</span>
+          <span class="r">PENDING</span>
+        </div>
+        <div class="pending-actions">
+          <button type="button" class="btn primary small approve-viewonly-btn">Approve as View Only</button>
+          <button type="button" class="btn gold small approve-admin-btn">Approve as Admin</button>
+          <button type="button" class="btn danger small reject-btn">Reject</button>
+        </div>
+      `;
+      wrap.appendChild(item);
+
+      const setBusy = (busy) => item.querySelectorAll("button").forEach(b => b.disabled = busy);
+
+      item.querySelector(".approve-viewonly-btn").addEventListener("click", async () => {
+        setBusy(true);
+        try{
+          await usersCol.doc(u.username.toLowerCase()).update({ role: ROLE_VIEWONLY });
+          logActivity("approve", `Approved "${u.username}" as View Only`);
+        } catch(err){
+          alert("Could not approve this account. Check your connection and try again.");
+          console.error(err);
+          setBusy(false);
+        }
+      });
+      item.querySelector(".approve-admin-btn").addEventListener("click", async () => {
+        setBusy(true);
+        try{
+          await usersCol.doc(u.username.toLowerCase()).update({ role: "admin" });
+          logActivity("approve", `Approved "${u.username}" as Administrator`);
+        } catch(err){
+          alert("Could not approve this account. Check your connection and try again.");
+          console.error(err);
+          setBusy(false);
+        }
+      });
+      item.querySelector(".reject-btn").addEventListener("click", async () => {
+        if(!confirm(`Reject and remove the registration for "${u.username}"?`)) return;
+        setBusy(true);
+        try{
+          await usersCol.doc(u.username.toLowerCase()).delete();
+          logActivity("reject", `Rejected registration for "${u.username}"`);
+        } catch(err){
+          alert("Could not reject this account. Check your connection and try again.");
+          console.error(err);
+          setBusy(false);
+        }
+      });
+    });
+    return wrap;
+  }
+
   function openRoster(){
     const list = document.getElementById("rosterList");
     const pendingUsers = users.filter(u => isPendingRole(u.role)).sort((a,b) => a.username.localeCompare(b.username));
+    // Split pending requests by which registration form they came from —
+    // View Only registrations only ever appear under "View Only Requests",
+    // Admin registrations only ever appear under "Admin Requests". The role
+    // assigned on approval is still always chosen explicitly by the Head
+    // Admin below; it is never inferred from this grouping.
+    const viewOnlyRequests = pendingUsers.filter(u => getRequestSource(u) === REQUEST_SOURCE_VIEWONLY);
+    const adminRequests = pendingUsers.filter(u => getRequestSource(u) === REQUEST_SOURCE_ADMIN);
     // Head admin first, then normal admins/viewonly alphabetically. Pending accounts get their own section above.
     const allUsers = users.filter(u => !isPendingRole(u.role)).sort((a,b) => {
       if((a.role === "headadmin") !== (b.role === "headadmin")) return a.role === "headadmin" ? -1 : 1;
@@ -3059,67 +3157,9 @@ function openYearOverview(){
 
     /* -------- Pending approvals (Head Admin only) -------- */
     if(session && session.role === "headadmin"){
-      const pendingWrap = document.createElement("div");
-      pendingWrap.className = "pending-section";
-      pendingWrap.innerHTML = `<div class="rh-label" style="margin-bottom:10px;">Pending Approvals &middot; ${pendingUsers.length}</div>`;
-      if(!pendingUsers.length){
-        pendingWrap.innerHTML += `<div class="empty-note">No accounts waiting for approval.</div>`;
-      } else {
-        pendingUsers.forEach(u => {
-          const item = document.createElement("div");
-          item.className = "roster-item-full pending";
-          item.innerHTML = `
-            <div class="roster-item">
-              <span class="u">${escapeHtml(u.username)}</span>
-              <span class="r">PENDING</span>
-            </div>
-            <div class="pending-actions">
-              <button type="button" class="btn primary small approve-viewonly-btn">Approve as View Only</button>
-              <button type="button" class="btn gold small approve-admin-btn">Approve as Admin</button>
-              <button type="button" class="btn danger small reject-btn">Reject</button>
-            </div>
-          `;
-          pendingWrap.appendChild(item);
-
-          const setBusy = (busy) => item.querySelectorAll("button").forEach(b => b.disabled = busy);
-
-          item.querySelector(".approve-viewonly-btn").addEventListener("click", async () => {
-            setBusy(true);
-            try{
-              await usersCol.doc(u.username.toLowerCase()).update({ role: ROLE_VIEWONLY });
-              logActivity("approve", `Approved "${u.username}" as View Only`);
-            } catch(err){
-              alert("Could not approve this account. Check your connection and try again.");
-              console.error(err);
-              setBusy(false);
-            }
-          });
-          item.querySelector(".approve-admin-btn").addEventListener("click", async () => {
-            setBusy(true);
-            try{
-              await usersCol.doc(u.username.toLowerCase()).update({ role: "admin" });
-              logActivity("approve", `Approved "${u.username}" as Administrator`);
-            } catch(err){
-              alert("Could not approve this account. Check your connection and try again.");
-              console.error(err);
-              setBusy(false);
-            }
-          });
-          item.querySelector(".reject-btn").addEventListener("click", async () => {
-            if(!confirm(`Reject and remove the registration for "${u.username}"?`)) return;
-            setBusy(true);
-            try{
-              await usersCol.doc(u.username.toLowerCase()).delete();
-              logActivity("reject", `Rejected registration for "${u.username}"`);
-            } catch(err){
-              alert("Could not reject this account. Check your connection and try again.");
-              console.error(err);
-              setBusy(false);
-            }
-          });
-        });
-      }
-      list.appendChild(pendingWrap);
+      list.appendChild(buildPendingRequestsSection(viewOnlyRequests, "View Only Requests"));
+      list.appendChild(document.createElement("hr"));
+      list.appendChild(buildPendingRequestsSection(adminRequests, "Admin Requests"));
       list.appendChild(document.createElement("hr"));
     }
 
