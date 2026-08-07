@@ -2788,13 +2788,26 @@ if(typeof NewEventsFeature !== "undefined" && NewEventsFeature.isTrackingActive(
 
   document.querySelectorAll("[data-close]").forEach(btn => {
     btn.addEventListener("click", () => closeOverlay(btn.dataset.close));
-  });
-  document.querySelectorAll(".overlay").forEach(ov => {
-    ov.addEventListener("click", (e) => { if(e.target === ov) ov.classList.remove("visible"); });
-  });
-  document.addEventListener("keydown", (e) => {
-    if(e.key === "Escape") document.querySelectorAll(".overlay.visible").forEach(o => o.classList.remove("visible"));
-  });
+});
+
+// Login modals (Store Access / View Only Access) must NOT close via backdrop click or Escape —
+// only the "X" close button (data-close / .modal-close) should be able to dismiss them.
+const NON_DISMISSIBLE_OVERLAYS = ["accountOverlay", "viewOnlyOverlay"];
+
+document.querySelectorAll(".overlay").forEach(ov => {
+    ov.addEventListener("click", (e) => {
+        if(e.target === ov && !NON_DISMISSIBLE_OVERLAYS.includes(ov.id)){
+            ov.classList.remove("visible");
+        }
+    });
+});
+document.addEventListener("keydown", (e) => {
+    if(e.key === "Escape"){
+        document.querySelectorAll(".overlay.visible").forEach(o => {
+            if(!NON_DISMISSIBLE_OVERLAYS.includes(o.id)) o.classList.remove("visible");
+        });
+    }
+});
 function openYearOverview(){
   const list = document.getElementById("yearOverviewList");
   list.innerHTML = "";
