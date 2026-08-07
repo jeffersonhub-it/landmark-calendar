@@ -975,6 +975,26 @@ body {
   .choice-item:hover{border-color:var(--red); transform:translateX(2px); background:rgba(179,19,26,0.04);}
   .choice-dot{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
 
+  /* ---------- Registration success modal ---------- */
+  .reg-success-modal{
+    background:var(--paper-soft); border-radius:var(--radius); padding:32px 28px 28px;
+    width:min(380px, 100%); max-height:88vh; overflow:auto; position:relative; box-shadow:var(--shadow);
+    text-align:center; animation:scaleIn .22s var(--ease);
+  }
+  .reg-success-icon{
+    width:56px; height:56px; border-radius:50%; margin:0 auto 16px;
+    background:var(--emerald); color:#fff; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 6px 16px -4px rgba(46,125,91,0.45);
+  }
+  .reg-success-icon svg{width:28px; height:28px;}
+  .reg-success-modal h3{
+    font-family:var(--display); font-weight:400; font-size:20px; margin:0 0 10px;
+  }
+  .reg-success-modal p{
+    font-size:14px; line-height:1.55; opacity:.8; margin:0 0 22px;
+  }
+  .reg-success-modal .btn{width:100%;}
+
   .account-modal{
     background:var(--paper-soft); border-radius:var(--radius); padding:28px; width:min(400px, 100%);
     max-height:88vh; overflow:auto; position:relative; box-shadow:var(--shadow);
@@ -1662,6 +1682,21 @@ body {
   </div>
 </div>
 
+<!-- Registration success modal: shown after a successful account registration
+     instead of a native alert(). No redirect happens; the only way to close
+     it is the OK button (or the X). -->
+<div class="overlay" id="regSuccessOverlay">
+  <div class="reg-success-modal">
+    <button class="modal-close" data-close="regSuccessOverlay">&times;</button>
+    <div class="reg-success-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+    </div>
+    <h3>Account Created</h3>
+    <p id="regSuccessMessage">Account created successfully! Please wait for the Head Admin to approve your account before logging in.</p>
+    <button type="button" class="btn primary" id="regSuccessOkBtn">OK</button>
+  </div>
+</div>
+
 <!-- ===================== FIREBASE SETUP ===================== -->
 <!-- 1) Create a free project at https://console.firebase.google.com
      2) Add a Web App, copy the config object it gives you, paste it below.
@@ -1834,6 +1869,9 @@ function renderViewOnlyModal(){
       await usersCol.doc(u.toLowerCase()).set({ username:u, password:p, role: ROLE_PENDING });
       msg.className = "auth-msg ok";
       msg.textContent = "Account created. Please wait for the Head Admin to approve it before logging in.";
+      showRegSuccessModal("Account created successfully! Please wait for the Head Admin to approve your account before logging in.");
+      body.querySelector("#voRegUser").value = "";
+      body.querySelector("#voRegPass").value = "";
     } catch(err){
       msg.textContent = "Could not create account. Check your connection.";
     }
@@ -2127,7 +2165,7 @@ headerRight.appendChild(countPill);
         try{
           await usersCol.doc(u.toLowerCase()).set({ username:u, password:p, role: ROLE_PENDING });
           msg.textContent = "Account created. Please wait for the Head Admin to approve it before logging in."; msg.className = "auth-msg ok";
-          alert(`Registration successful! Account "${u}" has been created and is waiting for Head Admin approval.`);
+          showRegSuccessModal("Account created successfully! Please wait for the Head Admin to approve your account before logging in.");
           body.querySelector("#regUser").value = "";
           body.querySelector("#regPass").value = "";
         } catch(err){
@@ -2815,6 +2853,21 @@ if(typeof NewEventsFeature !== "undefined" && NewEventsFeature.isTrackingActive(
       });
     }
   });
+
+  // Custom registration-success popup — replaces the old native alert().
+  // Centered on screen (via the shared .overlay flex layout), closable via
+  // its OK button, its X button, backdrop click, or Escape. No redirect
+  // ever happens; it just closes back to the current page/modal.
+  function showRegSuccessModal(message){
+    const msgEl = document.getElementById("regSuccessMessage");
+    if(msgEl && message) msgEl.textContent = message;
+    openOverlay("regSuccessOverlay");
+  }
+  const regSuccessOkBtn = document.getElementById("regSuccessOkBtn");
+  if(regSuccessOkBtn){
+    regSuccessOkBtn.addEventListener("click", () => closeOverlay("regSuccessOverlay"));
+  }
+
 function openYearOverview(){
   const list = document.getElementById("yearOverviewList");
   list.innerHTML = "";
