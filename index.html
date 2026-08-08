@@ -1822,6 +1822,8 @@ body {
   const IDLE_LIMIT_MS = 15 * 60 * 1000; // auto log-out after 15 minutes of no activity
   const MIN_USER_LEN = 3; // minimum characters required for Username on Login & Register
   const MIN_PASS_LEN = 4; // minimum characters required for Password on Login & Register
+  const USERNAME_PATTERN = /^[A-Za-z-]+$/; // only letters and hyphens allowed, e.g. ISS-Padilla
+  function isValidUsernameFormat(u){ return USERNAME_PATTERN.test(u); }
 
  const usersCol = firebaseReady ? db.collection("users") : null;
 const eventsCol = firebaseReady ? db.collection("events") : null;
@@ -1922,7 +1924,11 @@ function renderViewOnlyModal(){
       <div class="auth-msg err" id="voLoginMsg"></div>
     </div>
     <div id="voTabRegister" style="display:none;">
-      <div class="field"><label>Choose Username</label><input type="text" id="voRegUser" autocomplete="username"></div>
+      <div class="field">
+        <label>Choose Username</label>
+        <input type="text" id="voRegUser" autocomplete="username" placeholder="ISS-Padilla">
+        <div class="hint" style="margin-top:2px;">Format example: ISS-Padilla</div>
+      </div>
       <div class="field"><label>Choose Password</label><input type="password" id="voRegPass" autocomplete="new-password"></div>
       <button class="btn primary block" id="voRegBtn">Create Account</button>
       <div class="auth-msg err" id="voRegMsg"></div>
@@ -1963,6 +1969,9 @@ function renderViewOnlyModal(){
     if(!u || !p){ msg.textContent = "Choose a username and password."; return; }
     if(u.length < MIN_USER_LEN){
       msg.textContent = `Username must be at least ${MIN_USER_LEN} characters.`; return;
+    }
+    if(!isValidUsernameFormat(u)){
+      msg.textContent = "Username can only contain letters and hyphens (-)."; return;
     }
     if(p.length < MIN_PASS_LEN){
       msg.textContent = `Password must be at least ${MIN_PASS_LEN} characters.`; return;
@@ -2238,7 +2247,11 @@ headerRight.appendChild(countPill);
           <div class="hint">Store staff only. Everyone else can close this and keep browsing the calendar.</div>
         </div>
         <div id="tabRegister" style="display:none;">
-          <div class="field"><label>Choose Username</label><input type="text" id="regUser" autocomplete="username"></div>
+          <div class="field">
+            <label>Choose Username</label>
+            <input type="text" id="regUser" autocomplete="username" placeholder="ISS-Padilla">
+            <div class="hint" style="margin-top:2px;">Format example: ISS-Padilla</div>
+          </div>
           <div class="field"><label>Choose Password</label><input type="password" id="regPass" autocomplete="new-password"></div>
           <button class="btn primary block" id="regBtn">Create Account</button>
           <div class="auth-msg err" id="regMsg"></div>
@@ -2279,6 +2292,11 @@ headerRight.appendChild(countPill);
         if(!u || !p){ msg.textContent = "Choose a username and password."; return; }
         if(u.length < MIN_USER_LEN){
           msg.textContent = `Username must be at least ${MIN_USER_LEN} characters.`; return;
+        }
+        if(!isValidUsernameFormat(u)){
+          msg.textContent = "Username can only contain letters and hyphens (-).";
+          alert("Registration failed: username can only contain letters and hyphens (-).");
+          return;
         }
         if(p.length < MIN_PASS_LEN){
           msg.textContent = `Password must be at least ${MIN_PASS_LEN} characters.`; return;
