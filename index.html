@@ -1819,7 +1819,6 @@ body {
 
   /* ================= DATA LAYER (Firestore, real-time synced) ================= */
   const LS_SESSION = "meridian_session"; // session stays LOCAL per device/browser on purpose
-  const IDLE_LIMIT_MS = 15 * 60 * 1000; // auto log-out after 15 minutes of no activity
   const MIN_USER_LEN = 3; // minimum characters required for Username on Login & Register
   const MIN_PASS_LEN = 4; // minimum characters required for Password on Login & Register
   const USERNAME_PATTERN = /^[A-Za-z-]+$/; // only letters and hyphens allowed, e.g. ISS-Padilla
@@ -1829,11 +1828,14 @@ body {
 const eventsCol = firebaseReady ? db.collection("events") : null;
 const activityCol = firebaseReady ? db.collection("activityLog") : null;
 
-  // sessionStorage (not localStorage) so the session clears automatically when the browser/tab is closed
-  function loadSession(){ return JSON.parse(sessionStorage.getItem(LS_SESSION) || "null"); }
+  // localStorage (not sessionStorage) so the session survives closing the tab,
+  // closing the browser/app entirely, or losing network/mobile data. It only
+  // clears when the user clicks "Log out" (or an admin forces logout by
+  // deleting their account).
+  function loadSession(){ return JSON.parse(localStorage.getItem(LS_SESSION) || "null"); }
   function saveSession(s){
-    if(s) sessionStorage.setItem(LS_SESSION, JSON.stringify(s));
-    else sessionStorage.removeItem(LS_SESSION);
+    if(s) localStorage.setItem(LS_SESSION, JSON.stringify(s));
+    else localStorage.removeItem(LS_SESSION);
   }
 const ROLE_VIEWONLY = "viewonly";
 const ROLE_PENDING = "pending"; // newly registered accounts sit here until the Head Admin approves them
@@ -1860,28 +1862,13 @@ function getRequestSource(u){
   return u.requestSource === REQUEST_SOURCE_VIEWONLY ? REQUEST_SOURCE_VIEWONLY : REQUEST_SOURCE_ADMIN;
 }
 
-// Shared log-out routine used by the manual "Log out" button AND the idle-timeout auto log-out
+// Shared log-out routine used by the manual "Log out" button
 function performLogout(){
   session = null;
   saveSession(null);
   document.getElementById("loadingScreen").classList.remove("hidden");
   renderAll();
 }
-
-// Auto log-out after IDLE_LIMIT_MS of no mouse/keyboard/touch/scroll activity
-let idleTimer = null;
-function resetIdleTimer(){
-  clearTimeout(idleTimer);
-  idleTimer = setTimeout(() => {
-    if(session){
-      performLogout();
-      alert("You've been logged out due to inactivity.");
-    }
-  }, IDLE_LIMIT_MS);
-}
-["mousemove", "mousedown", "keydown", "scroll", "touchstart"].forEach(evt => {
-  document.addEventListener(evt, resetIdleTimer, { passive: true });
-});
 
 // Shared login routine used by both the View Only and Administrator modals
 function completeLogin(user){
@@ -1890,7 +1877,6 @@ function completeLogin(user){
   document.getElementById("loadingScreen").classList.add("hidden");
   closeOverlay("accountOverlay");
   closeOverlay("viewOnlyOverlay");
-  resetIdleTimer();
   logActivity("login", `Logged in as ${roleLabel(user.role)}`);
   renderAll();
 
